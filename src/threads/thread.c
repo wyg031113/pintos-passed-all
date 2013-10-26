@@ -642,8 +642,7 @@ init_thread (struct thread *t, const char *name, int priority)
     t->SaveData=false;
     t->bWait=false;
     t->FileNum=0;
-    //list_init(&t->sons_ret);
-   // hash_init(&t->h,page_hash,page_less,NULL);
+    t->IsUser=false;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
      list_init(&t->file_list);

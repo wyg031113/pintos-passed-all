@@ -20,6 +20,7 @@
 #include <hash.h>
 #include "userprog/syscall.h"
 #include "vm/hashfun.h"
+#include "vm/page.h"
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void record_ret(struct thread *t,int tid,int ret);
@@ -66,6 +67,7 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   struct thread *t=thread_current();
   hash_init(&t->h,page_hash,page_less,NULL); 
+  t->IsUser=true;
   success = load (token, &if_.eip, &if_.esp);
     if (!success)
     {
@@ -398,7 +400,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   read_bytes = 0;
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
-              if (!load_segment (file, file_page, (void *) mem_page,
+              if (!lazy_load (file, file_page, (void *) mem_page,
                                  read_bytes, zero_bytes, writable))
                 goto done;
             }
@@ -532,6 +534,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
     }
   return true;
 }
+
+
 
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */

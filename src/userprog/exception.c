@@ -6,6 +6,9 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/syscall.h"
+#include "vm/page.h"
+#include "vm/frame.h"
+#include "vm/hashfun.h"
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
@@ -148,6 +151,15 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
+  struct thread *t=thread_current();
+  //if(not_present)
+  //{
+      struct PageCon *pc=page_lookup(&t->h,(unsigned int)fault_addr&0xFFFFF000);
+      if(pc!=NULL&&reload(pc))
+      {
+	  return;
+      }	  
+  //}   
   if(not_present||(is_kernel_vaddr(fault_addr)&&user))
       ExitStatus(-1);
    //if(!not_present&&is_user_vaddr(fault_addr)&&!user)
