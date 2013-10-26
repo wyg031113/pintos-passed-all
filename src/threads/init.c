@@ -38,6 +38,7 @@
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
 #include "vm/frame.h"
+#include "devices/speaker.h"
 #endif
 
 /* Page directory with kernel mappings only. */
@@ -131,6 +132,7 @@ main (void)
   load_avg=0;                   // Init load_avg
   list_init(&AllPage);
   printf ("Boot complete.\n");
+  speaker_beep();
  // InitFinished=true;
   /* Run actions specified on kernel command line. */
   run_actions (argv);
