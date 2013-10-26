@@ -17,8 +17,9 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-
+#include <hash.h>
 #include "userprog/syscall.h"
+#include "vm/hashfun.h"
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void record_ret(struct thread *t,int tid,int ret);
@@ -63,9 +64,9 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-
-  success = load (token, &if_.eip, &if_.esp);
   struct thread *t=thread_current();
+  hash_init(&t->h,page_hash,page_less,NULL); 
+  success = load (token, &if_.eip, &if_.esp);
     if (!success)
     {
       palloc_free_page (file_name);
@@ -181,7 +182,7 @@ process_exit (void)
          that's been freed (and cleared). */
 
       CloseFile(cur,-1,true);  //关闭打开的文件
-
+      hash_destroy(&cur->h,destroy);
       if(cur->FileSelf!=NULL)  //撤销对自己人deny_write
       {
           file_allow_write(cur->FileSelf);

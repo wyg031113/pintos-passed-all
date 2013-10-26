@@ -37,6 +37,7 @@
 #include "devices/ide.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
+#include "vm/frame.h"
 #endif
 
 /* Page directory with kernel mappings only. */
@@ -128,6 +129,7 @@ main (void)
 #endif
 
   load_avg=0;                   // Init load_avg
+  list_init(&AllPage);
   printf ("Boot complete.\n");
  // InitFinished=true;
   /* Run actions specified on kernel command line. */

@@ -14,6 +14,8 @@
 #include "FixPoint.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "vm/hashfun.h"
+
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -641,6 +643,7 @@ init_thread (struct thread *t, const char *name, int priority)
     t->bWait=false;
     t->FileNum=0;
     //list_init(&t->sons_ret);
+   // hash_init(&t->h,page_hash,page_less,NULL);
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
      list_init(&t->file_list);

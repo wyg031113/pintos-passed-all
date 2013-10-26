@@ -82,6 +82,7 @@ typedef int tid_t;
 
 #include "../filesys/file.h"
 #include"synch.h"
+#include<hash.h>
 #define MAX_SEMA   18                  /* numbers of sema that a thread can get */
 #define MAX_DEEP    32                 /* Max deep of nest priority-donate */
 #define MaxSons 20
@@ -142,6 +143,7 @@ struct thread
     bool SaveData;                    //whether save data to father's array
     bool bWait;
     int FileNum;                      //nums of open files
+    struct hash h;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
