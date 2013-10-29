@@ -21,4 +21,5 @@ struct PageCon
 extern struct list AllPage;
 void InitPageCon(struct PageCon *pc);
 void *PageAlloc(enum palloc_flags flags);
+void CountRecent(struct hash_elem *e,void *aux);
 #endif

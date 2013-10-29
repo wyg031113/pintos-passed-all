@@ -21,6 +21,7 @@
 #include "userprog/syscall.h"
 #include "vm/hashfun.h"
 #include "vm/page.h"
+//#include"
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 void record_ret(struct thread *t,int tid,int ret);
@@ -66,7 +67,7 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   struct thread *t=thread_current();
-  hash_init(&t->h,page_hash,page_less,NULL); 
+  hash_init(&t->h,page_hash,page_less,t); 
   t->IsUser=true;
   success = load (token, &if_.eip, &if_.esp);
     if (!success)
@@ -184,7 +185,6 @@ process_exit (void)
          that's been freed (and cleared). */
 
       CloseFile(cur,-1,true);  //关闭打开的文件
-      hash_destroy(&cur->h,destroy);
       if(cur->FileSelf!=NULL)  //撤销对自己人deny_write
       {
           file_allow_write(cur->FileSelf);
@@ -205,9 +205,12 @@ process_exit (void)
           struct ret_data *rd=list_entry(list_pop_front(&cur->sons_ret),struct ret_data,elem);
           free(rd);
       }
+      enum intr_level old_level=intr_disable();
       cur->pagedir = NULL;
       pagedir_activate (NULL);
       pagedir_destroy (pd);
+      hash_destroy(&cur->h,destroy);
+      intr_set_level(old_level);
     }
 
 

@@ -27,10 +27,11 @@ struct PageCon *page_lookup(const struct hash *h,const void *vir_page)
 }
 void destroy(struct hash_elem *e,void *aux)
 {
+
     struct PageCon *pc=hash_entry(e,struct PageCon,has_elem);
-    enum intr_level old_level=intr_disable();
+    //enum intr_level old_level=intr_disable();
     list_remove(&pc->all_elem);
-    intr_set_level(old_level);
+   // intr_set_level(old_level);
 
    free(pc);
 
