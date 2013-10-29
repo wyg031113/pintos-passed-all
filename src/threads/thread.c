@@ -651,6 +651,7 @@ init_thread (struct thread *t, const char *name, int priority)
      sema_init (&t->SemaWait,0);
      sema_init (&t->SemaWaitSuccess,0);
      t->FileSelf=NULL;
+     t->esp=NULL;
     // t->bSuccess=true;
 #endif
   list_push_back (&all_list, &t->allelem);

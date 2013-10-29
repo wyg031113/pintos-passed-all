@@ -31,6 +31,7 @@ void destroy(struct hash_elem *e,void *aux)
     enum intr_level old_level=intr_disable();
     list_remove(&pc->all_elem);
     intr_set_level(old_level);
+
    free(pc);
 
 }

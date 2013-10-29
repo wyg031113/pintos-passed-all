@@ -152,13 +152,21 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
   struct thread *t=thread_current();
- // if(not_present)
-  //{
+  if(not_present)
+  {
       struct PageCon *pc=page_lookup(&t->h,(unsigned int)fault_addr&0xFFFFF000);
       if(pc!=NULL)
 	  if(reload(pc))
      	     return;
- // }   
+      if(StackFault(f,not_present,write,user,fault_addr))
+	 return; 
+  }   
+  else 
+  {
+      struct PageCon *pc=page_lookup(&t->h,(unsigned int)fault_addr&0xFFFFF000);
+      if(write)
+	  ExitStatus(-1);
+  }
   if(not_present||(is_kernel_vaddr(fault_addr)&&user))
       ExitStatus(-1);
    //if(!not_present&&is_user_vaddr(fault_addr)&&!user)

@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include "threads/interrupt.h"
+#include "threads/vaddr.h"
 struct lock LockAllPageList;
 void InitPageMan(void)
 {
@@ -98,4 +99,44 @@ bool reload(struct PageCon *pc)
 	return true;
     }
     return false;
+}
+
+bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void *fault_addr)
+{
+    struct thread *t=thread_current();
+     if(user)
+	 t->esp=f->esp;
+     else if(t->esp>fault_addr)
+	 return false;
+     if(PHYS_BASE-(unsigned int)fault_addr>STACK_LIMIT || t->esp-32>fault_addr)
+         return false;
+     struct PageCon *pc=(struct PageCon *)malloc(sizeof(struct PageCon));
+     if(pc==NULL)
+     {
+       printf("Error occur in malloc in install stack page\n");
+       return false;
+     }
+      InitPageCon(pc);
+      pc->vir_page=(int)(fault_addr)&0xFFFFF000;
+      pc->phy_page=PageAlloc(PAL_USER);
+      if(pc->phy_page==NULL)
+	  goto end;
+     if (!(pagedir_get_page (t->pagedir, pc->vir_page) == NULL
+          && pagedir_set_page (t->pagedir,pc->vir_page, pc->phy_page, pc->writable)))
+      {
+	  palloc_free_page(pc->phy_page);
+	  return false;
+      }
+
+      pc->is_code=1;
+      enum intr_level old_level=intr_disable(); //关中断
+      list_push_back(&AllPage,&pc->all_elem);
+      intr_set_level(old_level);
+ 
+      hash_insert(&t->h,&pc->has_elem);	 
+      return true;
+
+end:
+      free(pc);
+      return false;
 }

@@ -145,6 +145,7 @@ struct thread
     int FileNum;                      //nums of open files
     struct hash h;
     bool IsUser;
+    void *esp;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

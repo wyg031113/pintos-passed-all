@@ -63,6 +63,7 @@ void
 inode_init (void)
 {
   list_init (&open_inodes);
+  
 }
 
 /* Initializes an inode with LENGTH bytes of data and
@@ -133,13 +134,13 @@ inode_open (block_sector_t sector)
     return NULL;
 
   /* Initialize. */
+  sema_init(&inode->SemaSyn,1);
   list_push_front (&open_inodes, &inode->elem);
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->deny_write_cnt = 0;
   inode->removed = false;
   block_read (fs_device, inode->sector, &inode->data);
-  sema_init(&inode->SemaSyn,1);
   return inode;
 }
 
@@ -315,7 +316,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
       bytes_written += chunk_size;
     }
   free (bounce);
-   sema_up(&inode->SemaSyn);
+ sema_up(&inode->SemaSyn);
   return bytes_written;
 }
 
