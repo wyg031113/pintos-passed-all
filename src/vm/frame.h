@@ -15,6 +15,8 @@ struct PageCon
     uint32_t zero_bytes;
     uint8_t is_code;
     int recent;          //LRU 
+    bool InMem;
+    struct thread *t;
     struct list_elem all_elem;
     struct hash_elem has_elem;
 };
@@ -22,4 +24,5 @@ extern struct list AllPage;
 void InitPageCon(struct PageCon *pc);
 void *PageAlloc(enum palloc_flags flags);
 void CountRecent(struct hash_elem *e,void *aux);
+struct PageCon *FindMaxRecent(void);
 #endif

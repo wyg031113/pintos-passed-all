@@ -23,6 +23,7 @@
 #include "threads/palloc.h"
 #include "threads/pte.h"
 #include "threads/thread.h"
+#include "vm/swap.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #include "userprog/exception.h"
@@ -133,6 +134,7 @@ main (void)
   load_avg=0;                   // Init load_avg
 //  list_init(&AllPage);
   InitPageMan();
+  InitSwap();
   printf ("Boot complete.\n");
 //  speaker_beep();
  // InitFinished=true;

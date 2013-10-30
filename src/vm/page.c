@@ -53,7 +53,7 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
       enum intr_level old_level=intr_disable(); //关中断
       list_push_back(&AllPage,&pc->all_elem);
       intr_set_level(old_level);
-     
+      printf("add 1 page!\n");     
        InitPageCon(pc);
        pc->offs=every_offs;
        pc->read_bytes=page_read_bytes;
@@ -61,6 +61,7 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
        pc->writable=writable;
        pc->is_code=0;
        pc->vir_page=upage; 
+       pc->t=t;
        hash_insert(&t->h,&pc->has_elem);
       // printf("add page %x\n",pc->vir_page);
 
@@ -98,6 +99,15 @@ bool reload(struct PageCon *pc)
 	pc->is_code=2;
 	return true;
     }
+    else if(pc->is_code==1)
+    {
+        if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
+        {
+           palloc_free_page (pc->phy_page);
+	   return false;
+	}
+         SwapReadPage(pc->offs,pc->vir_page);
+    }
     return false;
 }
 
@@ -119,6 +129,7 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
       InitPageCon(pc);
       pc->vir_page=(int)(fault_addr)&0xFFFFF000;
       pc->phy_page=PageAlloc(PAL_USER);
+      pc->t=t;
       if(pc->phy_page==NULL)
 	  goto end;
      if (!(pagedir_get_page (t->pagedir, pc->vir_page) == NULL
@@ -127,7 +138,7 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
 	  palloc_free_page(pc->phy_page);
 	  return false;
       }
-
+      printf("add 1 page\n");
       pc->is_code=1;
       enum intr_level old_level=intr_disable(); //关中断
       list_push_back(&AllPage,&pc->all_elem);
