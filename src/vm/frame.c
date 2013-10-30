@@ -6,6 +6,12 @@
 #include"swap.h"
 #include"threads/interrupt.h"
 struct list AllPage;
+struct list PageUsed;
+void InitPageMan(void)
+{
+    list_init(&AllPage);
+    list_init(&PageUsed);
+}
 void InitPageCon(struct PageCon *pc)
 {
     pc->vir_page=NULL;
@@ -35,6 +41,9 @@ void *PageAlloc(enum palloc_flags flags)
 
 	}
 	pagedir_clear_page(pc->t->pagedir,pc->vir_page);
+	pc->phy_page=NULL;
+	list_remove(&pc->all_elem);
+	list_push_back(&AllPage,&pc->all_elem);
 	phy_page=palloc_get_page(flags);
    }
    intr_set_level(old_level);
@@ -53,12 +62,28 @@ void CountRecent(struct hash_elem *e,void *aux)
 	pagedir_set_accessed(t->pagedir,pc->vir_page,false);
 
 }
+void CountEveryPage(struct thread *t)
+{
+    struct list_elem *e;
+    for(e=list_begin(&PageUsed);e!=list_end(&PageUsed);e=list_next(e))
+    {
+	struct PageCon *pc=list_entry(e,struct PageCon,all_elem);
+	struct thread *t=pc->t;
+	if(t->pagedir==NULL)
+	    continue;
+	if(!pagedir_is_accessed(t->pagedir,pc->vir_page))
+	    pc->recent++;
+	else
+	    pagedir_set_accessed(t->pagedir,pc->vir_page,false);
+
+    }
+}
 struct PageCon *FindMaxRecent(void)
 {
     int recent=0;
     struct PageCon *pc=NULL,*MaxPC=NULL;
     struct list_elem *e;
-    for(e=list_begin(&AllPage);e!=list_end(&AllPage);e=list_next(e))
+    for(e=list_begin(&PageUsed);e!=list_end(&PageUsed);e=list_next(e))
     {
 	pc=list_entry(e,struct PageCon,all_elem);
 	if(pc->recent>recent&&pc->InMem)

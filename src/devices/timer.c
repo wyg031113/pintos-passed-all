@@ -183,10 +183,15 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   
   struct thread *t=thread_current();
-  enum intr_level old_level=intr_disable();
-  if(t->IsUser&&t->pagedir!=NULL)
-    hash_apply(&t->h,CountRecent);
-  intr_set_level(old_level);
+ if(ticks%100)
+  {
+
+       enum intr_level old_level=intr_disable();
+       if(t->IsUser&&t->pagedir!=NULL)
+          CountEveryPage(t);
+       intr_set_level(old_level);
+  }
+ 
   if(thread_mlfqs)                                          //BSD schedualer
   {
       //every tick increase the running thread's recent cpu

@@ -21,8 +21,11 @@ struct PageCon
     struct hash_elem has_elem;
 };
 extern struct list AllPage;
+extern struct list PageUsed;
+void PageInit(void);
 void InitPageCon(struct PageCon *pc);
 void *PageAlloc(enum palloc_flags flags);
 void CountRecent(struct hash_elem *e,void *aux);
 struct PageCon *FindMaxRecent(void);
+void CountEveryPage(struct thread *t);
 #endif

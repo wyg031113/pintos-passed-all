@@ -10,12 +10,7 @@
 #include <stdio.h>
 #include "threads/interrupt.h"
 #include "threads/vaddr.h"
-struct lock LockAllPageList;
-void InitPageMan(void)
-{
-    lock_init(&LockAllPageList);
-    list_init(&AllPage);
-}
+#include "swap.h"
 static bool
 install_page (void *upage, void *kpage, bool writable)
 {
@@ -53,7 +48,7 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
       enum intr_level old_level=intr_disable(); //关中断
       list_push_back(&AllPage,&pc->all_elem);
       intr_set_level(old_level);
-      printf("add 1 page!\n");     
+    //  printf("add 1 page!\n");     
        InitPageCon(pc);
        pc->offs=every_offs;
        pc->read_bytes=page_read_bytes;
@@ -97,6 +92,10 @@ bool reload(struct PageCon *pc)
            return false;
         }   
 	pc->is_code=2;
+	enum intr_level old_level=intr_disable();
+	list_remove(&pc->all_elem);
+	list_push_back(&PageUsed,&pc->all_elem);
+	intr_set_level(old_level);
 	return true;
     }
     else if(pc->is_code==1)
@@ -107,6 +106,11 @@ bool reload(struct PageCon *pc)
 	   return false;
 	}
          SwapReadPage(pc->offs,pc->vir_page);
+	enum intr_level old_level=intr_disable();
+        list_remove(&pc->all_elem);
+	list_push_back(&PageUsed,&pc->all_elem);
+	intr_set_level(old_level);
+	return true;
     }
     return false;
 }
@@ -138,10 +142,10 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
 	  palloc_free_page(pc->phy_page);
 	  return false;
       }
-      printf("add 1 page\n");
+     // printf("add 1 page\n");
       pc->is_code=1;
       enum intr_level old_level=intr_disable(); //关中断
-      list_push_back(&AllPage,&pc->all_elem);
+      list_push_back(&PageUsed,&pc->all_elem);
       intr_set_level(old_level);
  
       hash_insert(&t->h,&pc->has_elem);	 
