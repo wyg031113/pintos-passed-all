@@ -22,6 +22,8 @@ struct PageCon
 };
 extern struct list AllPage;
 extern struct list PageUsed;
+extern int Pages;
+extern int ICount;
 void PageInit(void);
 void InitPageCon(struct PageCon *pc);
 void *PageAlloc(enum palloc_flags flags);

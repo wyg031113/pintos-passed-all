@@ -59,7 +59,8 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
        pc->t=t;
        hash_insert(&t->h,&pc->has_elem);
       // printf("add page %x\n",pc->vir_page);
-
+static int x=0;
+//      printf("lazy load page:%d\n",x++);
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
@@ -70,10 +71,14 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
 }
 bool reload(struct PageCon *pc)
 {
+    static int x=0;
     struct thread *t=thread_current();
     pc->phy_page=PageAlloc(PAL_USER);
     if(pc->phy_page==NULL)
-       return false;
+    {
+	printf("reload failed because no phy_page\n");
+        return false;
+    }   
     if(pc->is_code==0||(pc->is_code==2&&pc->writable==false))
     {    
         /* Load this page. */
@@ -88,6 +93,7 @@ bool reload(struct PageCon *pc)
         /* Add the page to the process's address space. */
         if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
         {
+	    printf("install page error is_code=0 or 2\n");
            palloc_free_page (pc->phy_page);
            return false;
         }   
@@ -95,7 +101,9 @@ bool reload(struct PageCon *pc)
 	enum intr_level old_level=intr_disable();
 	list_remove(&pc->all_elem);
 	list_push_back(&PageUsed,&pc->all_elem);
+	ICount++;
 	intr_set_level(old_level);
+	//printf("reload page %d\n",x++);
 	return true;
     }
     else if(pc->is_code==1)
@@ -103,13 +111,22 @@ bool reload(struct PageCon *pc)
         if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
         {
            palloc_free_page (pc->phy_page);
+	   printf("install page error is_code=1\n");
 	   return false;
 	}
-         SwapReadPage(pc->offs,pc->vir_page);
+	/*int i;
+	for(i=0;i<100;i++)
+	    *(char *)pc->phy_page=i;
+	*/
+	//printf("run here!\n");
+         SwapReadPage(pc->offs,pc->phy_page);
+	 SwapPageFree(pc->offs);
 	enum intr_level old_level=intr_disable();
         list_remove(&pc->all_elem);
 	list_push_back(&PageUsed,&pc->all_elem);
+	ICount++;
 	intr_set_level(old_level);
+	//printf("reload page %d\n",x++);
 	return true;
     }
     return false;
@@ -146,6 +163,7 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
       pc->is_code=1;
       enum intr_level old_level=intr_disable(); //关中断
       list_push_back(&PageUsed,&pc->all_elem);
+      ICount++;
       intr_set_level(old_level);
  
       hash_insert(&t->h,&pc->has_elem);	 
@@ -153,5 +171,6 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
 
 end:
       free(pc);
+      
       return false;
 }

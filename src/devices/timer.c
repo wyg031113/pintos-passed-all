@@ -183,7 +183,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   
   struct thread *t=thread_current();
- if(ticks%100)
+ if(ticks%1)
   {
 
        enum intr_level old_level=intr_disable();

@@ -33,6 +33,8 @@ void destroy(struct hash_elem *e,void *aux)
     list_remove(&pc->all_elem);
    // intr_set_level(old_level);
 
+   if(pc->is_code==1)
+   SwapPageFree(pc->offs);
    free(pc);
 
 }
