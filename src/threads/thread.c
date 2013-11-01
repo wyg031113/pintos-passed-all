@@ -462,6 +462,8 @@ thread_set_priority (int new_priority)
 /* in priority donate we need to recored the priority  */
 void change_priority(struct thread *t,int new_priority,struct semaphore *s)
 {
+    if(t->top>=MAX_DEEP-1)
+	return;
     if(new_priority>PRI_MAX)
         new_priority=PRI_MAX;
     if(new_priority<PRI_MIN)
@@ -469,7 +471,7 @@ void change_priority(struct thread *t,int new_priority,struct semaphore *s)
     t->pri_stack[t->top].pri=t->priority;
     t->pri_stack[t->top].s=s;
     t->top++;
-
+   
     ASSERT(t->top<=MAX_DEEP);
     t->priority=new_priority;
 

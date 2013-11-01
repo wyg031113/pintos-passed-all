@@ -11,6 +11,7 @@
 #include "threads/interrupt.h"
 #include "threads/vaddr.h"
 #include "swap.h"
+//#define DBGPAGE
 static bool
 install_page (void *upage, void *kpage, bool writable)
 {
@@ -59,8 +60,10 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
        pc->t=t;
        hash_insert(&t->h,&pc->has_elem);
       // printf("add page %x\n",pc->vir_page);
+#ifdef DBGPAGE
 static int x=0;
-//      printf("lazy load page:%d\n",x++);
+      printf("lazy load page:%d\n",x++);
+#endif
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
@@ -103,7 +106,9 @@ bool reload(struct PageCon *pc)
 	list_push_back(&PageUsed,&pc->all_elem);
 	ICount++;
 	intr_set_level(old_level);
-	//printf("reload page %d\n",x++);
+#ifdef DBGPAGE
+	printf("reload page %d\n",x++);
+#endif
 	return true;
     }
     else if(pc->is_code==1)
@@ -126,7 +131,9 @@ bool reload(struct PageCon *pc)
 	list_push_back(&PageUsed,&pc->all_elem);
 	ICount++;
 	intr_set_level(old_level);
-	//printf("reload page %d\n",x++);
+#ifdef DBGPAGE
+	printf("reload page %d\n",x++);
+#endif
 	return true;
     }
     return false;

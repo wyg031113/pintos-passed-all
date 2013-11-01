@@ -84,7 +84,7 @@ typedef int tid_t;
 #include"synch.h"
 #include<hash.h>
 #define MAX_SEMA   40                  /* numbers of sema that a thread can get */
-#define MAX_DEEP   60                 /* Max deep of nest priority-donate */
+#define MAX_DEEP   40                 /* Max deep of nest priority-donate */
 #define MaxSons 20
 //above two can't too big  Maybe we don't have enough memory, mlfqs-load-60 will failed
 extern int load_avg;

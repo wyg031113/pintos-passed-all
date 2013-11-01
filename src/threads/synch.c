@@ -92,6 +92,7 @@ sema_down (struct semaphore *sema)
 /* for priority donate nested */
 void dfs_set_priority(struct thread *t,void *aux)
 {
+    static int deep=0;
     struct dfs_aux *da=(struct dfs_aux*)aux;
     int i;
     for(i=0;i<t->m_gs;i++)              //wheather the threads hold the sema

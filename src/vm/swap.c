@@ -1,14 +1,18 @@
 #include"swap.h"
 #include"filesys/directory.h"
+#include"threads/interrupt.h"
+#include"threads/synch.h"
 //==============================================================
 //use swap
 
 int swapslot[SlotSize];
 int SwapHead;
 struct block *SwapPar;
+struct semaphore RWSema;
 void InitSwap(void)
 {
 //    list_init(&SwapPage);
+    sema_init(&RWSema,1);
     SwapPar=block_get_role(BLOCK_SWAP);
     if(SwapPar==NULL)
     {
@@ -28,9 +32,11 @@ int SwapPageAlloc(void)
 {
     if(SwapHead==-1)
 	return -1;
+    enum intr_level old_level=intr_disable();
     int nPage=SwapHead;
     SwapHead=swapslot[SwapHead];
     int nSector=8*nPage;
+    intr_set_level(old_level);
     return nSector;
 }
 
@@ -42,20 +48,26 @@ void SwapPageFree(int nSector)
     if(nSector==-1)
 	return; 
     ASSERT(nSector%8==0);
+    enum intr_level old_level=intr_disable();
     int nSlot=nSector/8;
     swapslot[nSlot]=SwapHead;
     SwapHead=nSlot;
+    intr_set_level(old_level);
 }
 
 int SwapOutPage(uint8_t *virpage)
 {
     ASSERT(SwapPar!=NULL);
     int nPage=SwapPageAlloc();
+    //enum intr_level old_level=intr_disable();
     if(nPage==-1)
 	return -1;
     int i;
+    sema_down(&RWSema);
     for(i=0;i<8;i++)
        block_write(SwapPar,nPage+i,virpage+i*512);
+    sema_up(&RWSema);
+    //intr_set_level(old_level);
     return nPage;
 }
 void SwapReadPage(int nSector,uint8_t *virpage)
@@ -63,7 +75,11 @@ void SwapReadPage(int nSector,uint8_t *virpage)
     //printf("nSector=%d\n",nSector);
     ASSERT(SwapPar!=NULL);
     int i;
+   // enum intr_level old_level=intr_disable();
+    sema_down(&RWSema);
     for(i=0;i<8;i++) 
         block_read(SwapPar,nSector+i,virpage+i*512);
+    sema_up(&RWSema);
+   // intr_set_level(old_level);
 }
 

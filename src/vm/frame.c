@@ -5,6 +5,7 @@
 #include"userprog/pagedir.h"
 #include"swap.h"
 #include"threads/interrupt.h"
+//#define DBG
 struct list AllPage;
 struct list PageUsed;
 int Pages=0;
@@ -31,7 +32,7 @@ void *PageAlloc(enum palloc_flags flags)
    void * phy_page=palloc_get_page(flags);
    struct PageCon *pc;
    int error_code=0;
-   while(phy_page==NULL)//||IUsed>380)
+   while(phy_page==NULL)
    {
        enum intr_level old_level=intr_disable();
         pc=FindMaxRecent();
@@ -45,7 +46,7 @@ void *PageAlloc(enum palloc_flags flags)
 	if(!(pc->is_code==0&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page)))
 	{
 	    
-             pc->offs=SwapOutPage(pc->vir_page);
+             pc->offs=SwapOutPage(pc->phy_page);
 	     if(pc->offs==-1)
 	     {
 		 error_code=2;
@@ -73,7 +74,9 @@ void *PageAlloc(enum palloc_flags flags)
   if(phy_page==NULL)
 	    printf("No page in mem! error_code=%d\n",error_code);
   else IUsed++;
- //  printf("used pages=%d  but IUsed=%d\n",Pages,IUsed);   
+#ifdef DBG
+  printf("used pages=%d  but IUsed=%d\n",Pages,IUsed);   
+ #endif
    return phy_page;
 }
 //LRU
@@ -121,7 +124,9 @@ struct PageCon *FindMaxRecent(void)
 	}
 	n++;
     }
-//    printf("have %d phy_page in memroy,but ICount=%d\n",n,ICount);
+  #ifdef DBG
+    printf("have %d phy_page in memroy,but ICount=%d\n",n,ICount);
+  #endif
     return MaxPC;
 }
 
