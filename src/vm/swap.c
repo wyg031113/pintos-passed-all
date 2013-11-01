@@ -55,31 +55,29 @@ void SwapPageFree(int nSector)
     intr_set_level(old_level);
 }
 
-int SwapOutPage(uint8_t *virpage)
+int SwapOutPage(uint8_t *phy_page)
 {
     ASSERT(SwapPar!=NULL);
     int nPage=SwapPageAlloc();
-    //enum intr_level old_level=intr_disable();
     if(nPage==-1)
 	return -1;
     int i;
-    sema_down(&RWSema);
+    //sema_down(&RWSema);
     for(i=0;i<8;i++)
-       block_write(SwapPar,nPage+i,virpage+i*512);
-    sema_up(&RWSema);
-    //intr_set_level(old_level);
+       block_write(SwapPar,nPage+i,phy_page+i*512);
+    //sema_up(&RWSema);
     return nPage;
 }
-void SwapReadPage(int nSector,uint8_t *virpage)
+void SwapReadPage(int nSector,uint8_t *phy_page)
 {
     //printf("nSector=%d\n",nSector);
     ASSERT(SwapPar!=NULL);
     int i;
    // enum intr_level old_level=intr_disable();
-    sema_down(&RWSema);
+   // sema_down(&RWSema);
     for(i=0;i<8;i++) 
-        block_read(SwapPar,nSector+i,virpage+i*512);
-    sema_up(&RWSema);
+        block_read(SwapPar,nSector+i,phy_page+i*512);
+   // sema_up(&RWSema);
    // intr_set_level(old_level);
 }
 

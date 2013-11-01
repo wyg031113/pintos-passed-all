@@ -164,6 +164,7 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
           && pagedir_set_page (t->pagedir,pc->vir_page, pc->phy_page, pc->writable)))
       {
 	  palloc_free_page(pc->phy_page);
+	  free(pc);
 	  return false;
       }
      // printf("add 1 page\n");

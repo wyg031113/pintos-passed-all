@@ -545,10 +545,15 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp)
 {
-  uint8_t *kpage;
+  uint8_t *kpage=NULL;
   bool success = false;
+ while(kpage==NULL)
+ {
+     kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+     if(kpage==NULL)
+	 thread_yield();
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+ } 
   if (kpage != NULL)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);

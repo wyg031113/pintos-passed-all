@@ -291,7 +291,7 @@ void change_recent_cpu(struct thread *t,void *aux)
 //printf threads' info, may be very useful in debug
 void PrintThread(struct thread *t,void *aux)
 {
-    printf("%s  priority=%d top=%d\n",t->name,t->priority,t->top);
+  
 }
 
 /*sort the ready threads by prioiry. Algorithm is insert sort*/
@@ -450,44 +450,12 @@ thread_set_priority (int new_priority)
  // in thread donate, if a threads have a donated pirority,
  // can't set its priority them self
  // but need to restore he seted priority after donated
-    if(t->top>0)
-    {
-        t->set_pri=new_priority;
-        return;
-    }
+
     thread_current ()->priority = new_priority;
 	thread_yield();
 }
 
-/* in priority donate we need to recored the priority  */
-void change_priority(struct thread *t,int new_priority,struct semaphore *s)
-{
-    if(t->top>=MAX_DEEP-1)
-	return;
-    if(new_priority>PRI_MAX)
-        new_priority=PRI_MAX;
-    if(new_priority<PRI_MIN)
-        new_priority=PRI_MIN;
-    t->pri_stack[t->top].pri=t->priority;
-    t->pri_stack[t->top].s=s;
-    t->top++;
-   
-    ASSERT(t->top<=MAX_DEEP);
-    t->priority=new_priority;
 
-/* priority changed, change the position in the list, sort by priority */
-    if(t->status==THREAD_READY )
-    {
-        list_remove(&t->elem);
-        list_insert_ordered(&ready_list,&t->elem,less_priority,NULL);
-    }
-   else if(t->status==THREAD_BLOCKED&&NULL!=t->block_reason )
-    {
-        struct semaphore *sema=t->block_reason;
-        list_remove(&t->elem);
-        list_insert_ordered(&sema->waiters,&t->elem,less_priority,NULL);
-    }
-}
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void)
@@ -618,19 +586,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-/* init for geted sema */
-   int i;
-  for(i=0;i<MAX_SEMA;i++)
-  {
-      t->gs[i].n=0;
-      t->gs[i].s=NULL;
-  }
-  t->m_gs=0;
 
-/* init for prioriy stack */
-  t->top=0;
-  t->block_reason=NULL;
-  t->set_pri=-1;
 
 /* init for bsd schedualer */
   if(thread_mlfqs)

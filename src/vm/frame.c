@@ -5,16 +5,19 @@
 #include"userprog/pagedir.h"
 #include"swap.h"
 #include"threads/interrupt.h"
+#include"devices/timer.h"
 //#define DBG
 struct list AllPage;
 struct list PageUsed;
 int Pages=0;
 int IUsed=0;
 int ICount=0;
+bool InitOk=false;
 void InitPageMan(void)
 {
     list_init(&AllPage);
     list_init(&PageUsed);
+    InitOk=true;
 }
 void InitPageCon(struct PageCon *pc)
 {
@@ -25,25 +28,41 @@ void InitPageCon(struct PageCon *pc)
     pc->recent=0;
     pc->is_code=0;
     pc->t=NULL;
-    pc->InMem=true;
 }
 void *PageAlloc(enum palloc_flags flags)
 {
    void * phy_page=palloc_get_page(flags);
-   struct PageCon *pc;
+   struct PageCon *pc=NULL;
    int error_code=0;
    while(phy_page==NULL)
    {
-       enum intr_level old_level=intr_disable();
-        pc=FindMaxRecent();
-       intr_set_level(old_level);
-	if(pc==NULL)
+       enum intr_level old_level;
+       pc=NULL;
+       while(pc==NULL)
+       {
+          old_level=intr_disable();
+	   //CountEveryPage();
+           pc=FindMaxRecent();
+	   intr_set_level(old_level);
+	  if(pc==NULL)
+	      //thread_yield();
+	      timer_sleep(5);
+       }
+/*	if(pc==NULL)
 	{
-	    error_code=1;
-	    break;
+	   // error_code=1;
+	    intr_set_level(old_level);
+	   // break;
+	   thread_yield();
+	   continue;
 	}   
-	pc->InMem=false;
-	if(!(pc->is_code==0&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page)))
+	*/
+	list_remove(&pc->all_elem);
+	list_push_back(&AllPage,&pc->all_elem);
+	ICount--;
+   intr_set_level(old_level);
+//	if(!(pc->is_code==0&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page)))
+        if( !(pc->is_code==2&&pc->writable==false))
 	{
 	    
              pc->offs=SwapOutPage(pc->phy_page);
@@ -61,11 +80,6 @@ void *PageAlloc(enum palloc_flags flags)
 	pc->recent=0;
 	IUsed--;
 	pc->phy_page=NULL;
-         old_level=intr_disable();
-	list_remove(&pc->all_elem);
-	list_push_back(&AllPage,&pc->all_elem);
-	ICount--;
-   intr_set_level(old_level);
 	//printf("Swap out a Page\n");
   if(phy_page==NULL)
         phy_page=palloc_get_page(flags);
@@ -92,8 +106,11 @@ void CountRecent(struct hash_elem *e,void *aux)
 	pagedir_set_accessed(t->pagedir,pc->vir_page,false);
 
 }
-void CountEveryPage(struct thread *t)
+void CountEveryPage()
 {
+   if(!InitOk)
+       return;
+   // printf("I am run!\n");
     struct list_elem *e;
     for(e=list_begin(&PageUsed);e!=list_end(&PageUsed);e=list_next(e))
     {
@@ -107,6 +124,7 @@ void CountEveryPage(struct thread *t)
 	    pagedir_set_accessed(t->pagedir,pc->vir_page,false);
 
     }
+   
 }
 struct PageCon *FindMaxRecent(void)
 {
@@ -117,7 +135,7 @@ struct PageCon *FindMaxRecent(void)
     for(e=list_begin(&PageUsed);e!=list_end(&PageUsed);e=list_next(e))
     {
 	pc=list_entry(e,struct PageCon,all_elem);
-	if(pc->recent>=recent)
+	if(pc->recent>recent)
 	{
 	    recent=pc->recent;
 	    MaxPC=pc;
@@ -127,6 +145,7 @@ struct PageCon *FindMaxRecent(void)
   #ifdef DBG
     printf("have %d phy_page in memroy,but ICount=%d\n",n,ICount);
   #endif
+    //printf("max recent is %d\n",recent);
     return MaxPC;
 }
 

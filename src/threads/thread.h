@@ -121,14 +121,10 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-    struct PriStore pri_stack[MAX_DEEP];            /* used in priority donate */
-    int top;                            /* top point of pri_stack[] */
-    int set_pri;                        /* when have donate pri,record set pri*/
+
 	int64_t block_ticks;
     struct list_elem allelem;           /* List element for all threads list. */
-    struct GetedSema gs[MAX_SEMA];      /* record the sema a thread geted*/
-    int m_gs;                            /* Used num of gs[] */
-    struct semaphore *block_reason;             /* why a thread be blocked */
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 

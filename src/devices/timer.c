@@ -183,12 +183,12 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   
   struct thread *t=thread_current();
- if(ticks%1)
+ if(ticks%100==0)
   {
 
        enum intr_level old_level=intr_disable();
-       if(t->IsUser&&t->pagedir!=NULL)
-          CountEveryPage(t);
+      // if(t->IsUser&&t->pagedir!=NULL)
+          CountEveryPage();
        intr_set_level(old_level);
   }
  

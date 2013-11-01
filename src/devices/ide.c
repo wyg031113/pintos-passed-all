@@ -265,7 +265,9 @@ identify_ata_device (struct ata_disk *d)
   char *model, *serial;
   char extra_info[128];
   struct block *block;
-
+ int i=0;
+ for(i=0;i<BLOCK_SECTOR_SIZE;i++)
+     id[i]=0;
   ASSERT (d->is_ata);
 
   /* Send the IDENTIFY DEVICE command, wait for an interrupt
@@ -346,6 +348,11 @@ ide_read (void *d_, block_sector_t sec_no, void *buffer)
 {
   struct ata_disk *d = d_;
   struct channel *c = d->channel;
+//  *(char *)buffer=1;
+  //*(char *)(buffer+BLOCK_SECTOR_SIZE-1)=1;
+  int i;
+  for(i=0;i<BLOCK_SECTOR_SIZE;i++)
+     ((char *)buffer)[i]=0;
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_READ_SECTOR_RETRY);
@@ -366,6 +373,10 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
 {
   struct ata_disk *d = d_;
   struct channel *c = d->channel;
+  char s;
+ int i;
+ for(i=0;i<BLOCK_SECTOR_SIZE;i++)
+     s=((char *)buffer)[i];
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_WRITE_SECTOR_RETRY);

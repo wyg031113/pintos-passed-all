@@ -80,7 +80,7 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0)
     {
 		list_insert_ordered(&sema->waiters,&thread_current()->elem,less_priority,NULL);
-        thread_current()->block_reason=sema;
+
         //printf("I am %s,I will be blocked! pid = %d\n",thread_current()->name,thread_current()->tid);
         thread_block ();
     }
@@ -89,29 +89,7 @@ sema_down (struct semaphore *sema)
   intr_set_level (old_level);
 }
 
-/* for priority donate nested */
-void dfs_set_priority(struct thread *t,void *aux)
-{
-    static int deep=0;
-    struct dfs_aux *da=(struct dfs_aux*)aux;
-    int i;
-    for(i=0;i<t->m_gs;i++)              //wheather the threads hold the sema
-        if(t->gs[i].s==da->s)
-               break;
-    if(i<t->m_gs&&da->newPriority>=t->priority)      // if hold and current thread's prioirty higher
-    {
-        change_priority(t,da->newPriority,da->s);    // donate the priority
 
-        if(t->status==THREAD_BLOCKED&&t->block_reason) // if thread t is blocked, we should check
-        {
-           struct dfs_aux newAux;
-           newAux.s=t->block_reason;
-           newAux.newPriority=t->priority;
-           if(t->block_reason!=da->s)                   // avoid dead loops
-                thread_foreach(dfs_set_priority,&newAux);
-        }
-    }
-}
 /* Down or "P" operation on a semaphore, but only if the
    semaphore is not already 0.  Returns true if the semaphore is
    decremented, false otherwise.
@@ -156,7 +134,7 @@ sema_up (struct semaphore *sema)
         t=list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem);
         thread_unblock (t);                                 // record why a thread blocked
-        t->block_reason=NULL;
+
 	bYield=true;
 	//printf("I am %s,I will be active! pid = %d\n",t->name,t->tid);
     }
@@ -245,34 +223,7 @@ lock_acquire (struct lock *lock)    // only lock need priority donate!
   enum intr_level old_level;
   old_level = intr_disable ();
 
-//because thread_foreach need disable interupt
-  struct semaphore *sema=&lock->semaphore;
-  if(lock->semaphore.value<=0)              //wheher this thread will be blocked.
-  {                                         //if yes  dfs donate priority
-        thread_current()->block_reason=sema;
-		struct dfs_aux aux;
-		aux.s=sema;
-		aux.newPriority=thread_current()->priority;
-		thread_foreach(dfs_set_priority,&aux);
-  }
-  else                                      // if note get the lock
-  {
-        struct thread *t=thread_current();
-        int i;                          // find if the thread already have the lock
-        for(i=0;i < t->m_gs;i++)
-        if(t->gs[i].s==sema)
-            break;
 
-        if(i<t->m_gs)                 // if have
-            t->gs[i].n++;
-        else                          // if have not
-        {
-             ASSERT(t->m_gs<MAX_SEMA);
-             t->m_gs++;
-             t->gs[i].s=sema;
-             t->gs[i].n++;
-        }
-   }
 
   sema_down (&lock->semaphore);
    intr_set_level (old_level);
@@ -312,33 +263,7 @@ lock_release (struct lock *lock)
 
   lock->holder = NULL;
 
-    struct semaphore *sema=&lock->semaphore;
-    struct thread *t=thread_current();
-   t->block_reason=NULL;
-  int i;                            //realse lock should check if need restore priority
-
-  for(i=0;i<t->m_gs;i++)
-      if(t->gs[i].s==sema)
-         break;
-    t->gs[i].n--;
-      if(t->gs[i].n==0)
-      {
-          t->gs[i]=t->gs[t->m_gs-1];   //delete the lock
-          t->m_gs--;
-           while(t->top>0)              //restore priority
-          {
-              for(i=0;i<t->m_gs;i++)
-                if(t->gs[i].s==t->pri_stack[t->top-1].s)
-                    break;
-              if(i<t->m_gs)
-                    break;
-              t->priority=t->pri_stack[t->top-1].pri;
-              t->top--;
-          }
-      }
-
-  if(t->top<=0&&t->set_pri>0)
-      t->priority=t->set_pri;
+   
 
   sema_up (&lock->semaphore);
 
