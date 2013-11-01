@@ -43,10 +43,13 @@ void *PageAlloc(enum palloc_flags flags)
           old_level=intr_disable();
 	   //CountEveryPage();
            pc=FindMaxRecent();
-	   intr_set_level(old_level);
 	  if(pc==NULL)
-	      //thread_yield();
-	      timer_sleep(5);
+	  {
+	   intr_set_level(old_level);
+	   timer_sleep(5);
+	  }    //thread_yield();
+	  else
+	      pagedir_clear_page(pc->t->pagedir,pc->vir_page);
        }
 /*	if(pc==NULL)
 	{
@@ -76,7 +79,6 @@ void *PageAlloc(enum palloc_flags flags)
 
 	}
 	palloc_free_page(pc->phy_page);
-	pagedir_clear_page(pc->t->pagedir,pc->vir_page);
 	pc->recent=0;
 	IUsed--;
 	pc->phy_page=NULL;
