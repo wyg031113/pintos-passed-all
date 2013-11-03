@@ -355,10 +355,9 @@ ide_read (void *d_, block_sector_t sec_no, void *buffer)
    //  ((char *)buffer)[i]=0;
   void *vir_page1=buffer;
   void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
-  vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
+  //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
   LockPage(vir_page1);
-  if(vir_page2!=NULL) 
-      LockPage(vir_page2);
+  LockPage(vir_page2);
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_READ_SECTOR_RETRY);
@@ -368,8 +367,7 @@ ide_read (void *d_, block_sector_t sec_no, void *buffer)
   input_sector (c, buffer);
   lock_release (&c->lock);
   FreeLockPage(vir_page1);
-  if(vir_page2!=NULL)
-     FreeLockPage(vir_page2);
+  FreeLockPage(vir_page2);
 }
 
 /* Write sector SEC_NO to disk D from BUFFER, which must contain
@@ -382,10 +380,17 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
 {
   struct ata_disk *d = d_;
   struct channel *c = d->channel;
-  char s;
+ /* char s;
  int i;
  for(i=0;i<BLOCK_SECTOR_SIZE;i++)
      s=((char *)buffer)[i];
+  */
+ void *vir_page1=buffer;
+ void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
+ //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
+ LockPage(vir_page1);
+ LockPage(vir_page2);
+
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_WRITE_SECTOR_RETRY);
@@ -394,6 +399,8 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
   output_sector (c, buffer);
   sema_down (&c->completion_wait);
   lock_release (&c->lock);
+  FreeLockPage(vir_page1);
+  FreeLockPage(vir_page2);
 }
 
 static struct block_operations ide_operations =
