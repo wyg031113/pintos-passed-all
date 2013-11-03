@@ -28,6 +28,7 @@ void InitPageCon(struct PageCon *pc)
     pc->recent=0;
     pc->is_code=0;
     pc->t=NULL;
+    pc->LockTimes=0;
 }
 void *PageAlloc(enum palloc_flags flags)
 {
@@ -123,7 +124,10 @@ void CountEveryPage()
 	if(!pagedir_is_accessed(t->pagedir,pc->vir_page))
 	    pc->recent++;
 	else
+	{
 	    pagedir_set_accessed(t->pagedir,pc->vir_page,false);
+	    pc->recent=0;
+	} 
 
     }
    
@@ -137,7 +141,7 @@ struct PageCon *FindMaxRecent(void)
     for(e=list_begin(&PageUsed);e!=list_end(&PageUsed);e=list_next(e))
     {
 	pc=list_entry(e,struct PageCon,all_elem);
-	if(pc->recent>recent)
+	if(pc->recent>recent&&pc->LockTimes==0)
 	{
 	    recent=pc->recent;
 	    MaxPC=pc;

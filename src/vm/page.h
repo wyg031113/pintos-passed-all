@@ -12,4 +12,6 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
 void InitPageMan(void);
 extern struct lock LockAllPageList;
 bool StackFault(struct intr_frame *f,bool not_present,bool write,bool user,void *fault_addr);
+bool LockPage(void *vir_page);
+bool FreeLockPage(void *vir_page);
 #endif

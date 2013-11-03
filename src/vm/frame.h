@@ -16,6 +16,7 @@ struct PageCon
     uint8_t is_code;
     int recent;          //LRU 
     struct thread *t;
+    int LockTimes;
     struct list_elem all_elem;
     struct hash_elem has_elem;
 };

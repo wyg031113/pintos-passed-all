@@ -182,3 +182,33 @@ end:
       
       return false;
 }
+
+bool LockPage(void *vir_page)
+{
+    vir_page=(void*)((unsigned int)vir_page&0xFFFFF000);
+    struct thread *t=thread_current();
+    if(!t->IsUser)
+	return false;
+    struct PageCon *pc=page_lookup(&t->h,vir_page);
+    if(pc==NULL)
+	return false;
+    pc->LockTimes++;
+    if(pagedir_get_page (t->pagedir, vir_page) == NULL)
+	ASSERT(reload(pc));
+    return true;
+}
+
+bool FreeLockPage(void *vir_page)
+{
+    vir_page=(void*)((unsigned int)vir_page&0xFFFFF000);
+    struct thread *t=thread_current();
+    if(!t->IsUser)
+	return false;
+    struct PageCon *pc=page_lookup(&t->h,vir_page);
+    if(pc==NULL)
+	return false;
+    if(pc->LockTimes>=0)
+	pc->LockTimes--;
+    return true;
+	
+}
