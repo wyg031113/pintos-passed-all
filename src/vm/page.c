@@ -136,6 +136,16 @@ bool reload(struct PageCon *pc)
 #endif
 	return true;
     }
+    else if(pc->is_code==3)
+    {
+        if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
+        {
+           palloc_free_page (pc->phy_page);
+	   printf("install page error is_code=1\n");
+	   return false;
+	}
+	pc->is_code=1;
+    }
     return false;
 }
 
@@ -173,8 +183,9 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
       list_push_back(&PageUsed,&pc->all_elem);
       ICount++;
       intr_set_level(old_level);
- 
       hash_insert(&t->h,&pc->has_elem);	 
+      if(!LazyLoadStack(pc->vir_page+0x1000))
+        return false;
       return true;
 
 end:
@@ -182,10 +193,32 @@ end:
       
       return false;
 }
-
+bool LazyLoadStack(void *vir_page)
+{
+    struct thread *t=thread_current();
+    struct PageCon *pc;
+    while(vir_page<0xBFFFF000&&page_lookup(&t->h,vir_page)!=NULL)
+    {
+	pc=(struct PageCon*)malloc(sizeof(struct PageCon));
+	if(pc==NULL)
+	    return false;
+	InitPageCon(pc);
+	pc->vir_page=vir_page;
+	pc->is_code=3;
+	pc->t=t;
+      enum intr_level old_level=intr_disable(); //关中断
+      list_push_back(&AllPage,&pc->all_elem);
+      intr_set_level(old_level);
+      hash_insert(&t->h,&pc->has_elem);	 
+      vir_page+=0x1000;
+    }
+    return true;
+}
 bool LockPage(void *vir_page)
 {
     vir_page=(void*)((unsigned int)vir_page&0xFFFFF000);
+    if(vir_page==0xBFFFF000)
+	return true;
     struct thread *t=thread_current();
     if(!t->IsUser)
 	return false;
@@ -200,7 +233,10 @@ bool LockPage(void *vir_page)
 
 bool FreeLockPage(void *vir_page)
 {
+    
     vir_page=(void*)((unsigned int)vir_page&0xFFFFF000);
+    if(vir_page==0xBFFFF000)
+	return true;
     struct thread *t=thread_current();
     if(!t->IsUser)
 	return false;

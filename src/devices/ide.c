@@ -350,14 +350,14 @@ ide_read (void *d_, block_sector_t sec_no, void *buffer)
   struct channel *c = d->channel;
 //  *(char *)buffer=1;
   //*(char *)(buffer+BLOCK_SECTOR_SIZE-1)=1;
-//  int i;
- // for(i=0;i<BLOCK_SECTOR_SIZE;i++)
-   //  ((char *)buffer)[i]=0;
+  int i;
+ for(i=0;i<BLOCK_SECTOR_SIZE;i++)
+    ((char *)buffer)[i]=0;
   void *vir_page1=buffer;
   void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
   //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
-  LockPage(vir_page1);
-  LockPage(vir_page2);
+ if(vir_page1<0xC00000000)if( LockPage(vir_page1)) while(1);
+ if(vir_page2<0xC00000000) if(LockPage(vir_page2))while(1);
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_READ_SECTOR_RETRY);
@@ -388,8 +388,8 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
  void *vir_page1=buffer;
  void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
  //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
- LockPage(vir_page1);
- LockPage(vir_page2);
+if(vir_page1<=0xC0000000) if(!LockPage(vir_page1)) while(1);
+if(vir_page2<=0xC0000000) if(!LockPage(vir_page2)) while(1);
 
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
