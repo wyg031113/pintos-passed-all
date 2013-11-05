@@ -7,8 +7,8 @@
 #include"threads/interrupt.h"
 #define STACK_LIMIT 0x400000
 bool reload(struct PageCon *pc);
-bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
-              uint32_t read_bytes, uint32_t zero_bytes, bool writable);
+bool lazy_load (off_t ofs, uint8_t *upage,
+              uint32_t read_bytes, uint32_t zero_bytes, bool writable,int is_code);
 void InitPageMan(void);
 extern struct lock LockAllPageList;
 bool StackFault(struct intr_frame *f,bool not_present,bool write,bool user,void *fault_addr);

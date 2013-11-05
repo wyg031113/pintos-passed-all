@@ -29,5 +29,5 @@ void InitPageCon(struct PageCon *pc);
 void *PageAlloc(enum palloc_flags flags);
 void CountRecent(struct hash_elem *e,void *aux);
 struct PageCon *FindMaxRecent(void);
-void CountEveryPage();
+void CountEveryPage(void);
 #endif

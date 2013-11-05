@@ -165,10 +165,17 @@ page_fault (struct intr_frame *f)
   {
       struct PageCon *pc=page_lookup(&t->h,(unsigned int)fault_addr&0xFFFFF000);
       if(write)
-	  ExitStatus(-1);
+      {
+      ExitStatus(-1);
+    // printf("run here\n");
+      }  
   }
   if(not_present||(is_kernel_vaddr(fault_addr)&&user))
-      ExitStatus(-1);
+  {
+      
+  printf("run here,fault_addr=%x notpresent=%d user=%d\n",fault_addr,not_present,user);
+  ExitStatus(-1);
+  } 
    //if(!not_present&&is_user_vaddr(fault_addr)&&!user)
     //  return;
   /* To implement virtual memory, delete the rest of the function

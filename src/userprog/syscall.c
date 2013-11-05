@@ -10,6 +10,10 @@
 #include  "process.h"
 #include <string.h>
 #include "devices/shutdown.h"
+#include "vm/frame.h"
+#include "vm/page.h"
+#include "vm/mmap.h"
+#include "vm/hashfun.h"
 #define MAXCALL 21
 #define MaxFiles 200
 #define stdin 1
@@ -30,6 +34,8 @@ void ISeek(struct intr_frame *f);
 void IRemove(struct intr_frame *f);
 void ITell(struct intr_frame *f);
 void IHalt(struct intr_frame *f);
+void IMmap(struct intr_frame *f);
+void IUnMap(struct intr_frame *f);
 struct file_node *GetFile(struct thread *t,int fd);
 void
 syscall_init (void)
@@ -200,6 +206,7 @@ int CloseFile(struct thread *t,int fd,int bAll)
                 return 0;
             }
   }
+  return 0;
 
 }
 
@@ -340,4 +347,47 @@ void IHalt(struct intr_frame *f)
     shutdown_power_off();
     f->eax=0;
 
+}
+
+void IMmap(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+6))
+      ExitStatus(-1);
+    if((const char *)*((unsigned int *)f->esp+4)==NULL)
+        {
+            f->eax=-1;
+            ExitStatus(-1);
+        }
+    int fd=(int)*((unsigned int *)f->esp+4);
+    void *vaddr=*((unsigned *)f->esp+5);
+    if((unsigned)vaddr&!PGMASK!=0||vaddr==NULL)
+    {
+	f->eax=-1;
+	return;
+    }
+    struct thread *t=thread_current();
+    struct file_node *fn=GetFile(thread_current(),fd);
+    int size=file_length(fn->f);
+    int nPages= (size+PGSIZE-1)/PGSIZE;
+    int ZeroBytes=size%PGSIZE;
+    int i;
+    for(i=0;i<nPages;i++)
+	if(page_lookup(&t->h,vaddr+PGSIZE*i))
+	    break;
+    if(i<nPages)
+    {
+	f->eax=-1;
+	return;
+    }
+    struct MmapNode *mn=(struct MmapNode *)malloc(sizeof(struct MmapNode));
+    if(mn==NULL)
+    {
+	printf("No memory in IMmap\n");
+	return;
+    }
+    mn->nPages=nPages;
+    mn->FilePtr=file_reopen(fn->f);
+    mn->id=IDAlloc();
+    mn->vaddr=vaddr;
+    //lazy_load()
 }

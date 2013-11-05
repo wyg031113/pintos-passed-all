@@ -191,6 +191,8 @@ process_exit (void)
           file_close (cur->FileSelf);
       }
       printf("%s: exit(%d)\n",cur->name,cur->ret); //输出推出消息
+     if(cur->ret==-1)
+       while(1);
       record_ret(cur->father,cur->tid,cur->ret); //保存返回值到父进程
       cur->SaveData=true;
        if(cur->father!=NULL&&cur->bWait)  //如果有父进程在等就唤醒他
@@ -403,8 +405,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   read_bytes = 0;
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
-              if (!lazy_load (file, file_page, (void *) mem_page,
-                                 read_bytes, zero_bytes, writable))
+              if (!lazy_load (file_page, (void *) mem_page,
+                                 read_bytes, zero_bytes, writable,0))
                 goto done;
             }
           else
