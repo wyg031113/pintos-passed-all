@@ -22,15 +22,15 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
-bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
-              uint32_t read_bytes, uint32_t zero_bytes, bool writable)
+bool lazy_load(off_t ofs, uint8_t *upage,
+              uint32_t read_bytes, uint32_t zero_bytes, bool writable,int is_code)
 {
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
 
   struct thread *t=thread_current();
-  file_seek (file, ofs);
+  //file_seek (file, ofs);
   off_t every_offs=ofs;
   while (read_bytes > 0 || zero_bytes > 0)
     {
@@ -54,7 +54,7 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
        pc->read_bytes=page_read_bytes;
        pc->zero_bytes=page_zero_bytes;
        pc->writable=writable;
-       pc->is_code=0;
+       pc->is_code=is_code;
        pc->vir_page=upage; 
        pc->t=t;
        hash_insert(&t->h,&pc->has_elem);
@@ -72,6 +72,9 @@ bool lazy_load (struct file *file, off_t ofs, uint8_t *upage,
 }
 bool reload(struct PageCon *pc)
 {
+#ifdef DBGPAGE
+        static int x=0;
+#endif
     struct thread *t=thread_current();
     pc->phy_page=PageAlloc(PAL_USER);
     if(pc->phy_page==NULL)

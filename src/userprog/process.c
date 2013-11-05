@@ -138,8 +138,14 @@ process_wait (tid_t child_tid)
 
       return ret;
   }
+   enum intr_level old_level=intr_disable();
    t->bWait=true;
+   //printf("sleep\n");
+//   printf("I am thread %s,I wait for thread %s\n",thread_current()->name,t->name);
   sema_down(&t->father->SemaWait);                      //在这个信号量上等。
+  intr_set_level(old_level);
+  //printf("wake\n");
+ // printf("I am thread %s,I am waked up!e\n",thread_current()->name);
   int ret=-1;
     ret=GetRetFromSonsList(thread_current(),child_tid);
 
@@ -191,13 +197,19 @@ process_exit (void)
           file_close (cur->FileSelf);
       }
       printf("%s: exit(%d)\n",cur->name,cur->ret); //输出推出消息
+      enum intr_level old_level=intr_disable();
       record_ret(cur->father,cur->tid,cur->ret); //保存返回值到父进程
       cur->SaveData=true;
+      intr_set_level(old_level);
        if(cur->father!=NULL&&cur->bWait)  //如果有父进程在等就唤醒他
 
       {
           while(!list_empty(&cur->father->SemaWait.waiters))
-            sema_up(&cur->father->SemaWait);
+	  {
+
+//	  printf("I am thread %s, I wake up my father %s\n",cur->name,cur->father->name);
+	  sema_up(&cur->father->SemaWait);
+	  }   
 
       }
       while(!list_empty(&cur->sons_ret))    //释放孩子返回值链表
@@ -205,7 +217,7 @@ process_exit (void)
           struct ret_data *rd=list_entry(list_pop_front(&cur->sons_ret),struct ret_data,elem);
           free(rd);
       }
-      enum intr_level old_level=intr_disable();
+      old_level=intr_disable();
       cur->pagedir = NULL;
       pagedir_activate (NULL);
       pagedir_destroy (pd);
@@ -403,8 +415,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   read_bytes = 0;
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
-              if (!lazy_load (file, file_page, (void *) mem_page,
-                                 read_bytes, zero_bytes, writable))
+              if (!lazy_load (file_page, (void *) mem_page,
+                                 read_bytes, zero_bytes, writable,0))
                 goto done;
             }
           else
