@@ -9,6 +9,7 @@
 #include "threads/io.h"
 #include "threads/interrupt.h"
 #include "threads/synch.h"
+#include "threads/vaddr.h"
 
 /* The code in this file is an interface to an ATA (IDE)
    controller.  It attempts to comply to [ATA-3]. */
@@ -343,21 +344,36 @@ descramble_ata_string (char *string, int size)
    room for BLOCK_SECTOR_SIZE bytes.
    Internally synchronizes accesses to disks, so external
    per-disk locking is unneeded. */
+static bool LockPageSector(void *buffer)
+{
+    
+  void *vir_page1=buffer;
+  void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
+  if((unsigned)vir_page1&~PGMASK==(unsigned)vir_page2&~PGMASK)
+      vir_page2=NULL;
+ if(vir_page1<PHYS_BASE)
+     if(!LockPage(vir_page1))
+	 printf("Lock page %x failed\n",vir_page1);
+ if(vir_page2!=NULL&&vir_page2<PHYS_BASE) 
+     if(!LockPage(vir_page2))
+         printf("Lock Page %x failed\n",vir_page2);
+}
+static bool FreeLockPageSector(void *buffer)
+{
+  void *vir_page1=buffer;
+  void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
+  if((unsigned)vir_page1&~PGMASK==(unsigned)vir_page2&~PGMASK)
+      vir_page2=NULL;
+  FreeLockPage(vir_page1);
+  if(vir_page2!=NULL)
+     FreeLockPage(vir_page2);
+}
 static void
 ide_read (void *d_, block_sector_t sec_no, void *buffer)
 {
   struct ata_disk *d = d_;
   struct channel *c = d->channel;
-//  *(char *)buffer=1;
-  //*(char *)(buffer+BLOCK_SECTOR_SIZE-1)=1;
-  int i;
- for(i=0;i<BLOCK_SECTOR_SIZE;i++)
-    ((char *)buffer)[i]=0;
-  void *vir_page1=buffer;
-  void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
-  //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
- if(vir_page1<0xC00000000)if( LockPage(vir_page1)) while(1);
- if(vir_page2<0xC00000000) if(LockPage(vir_page2))while(1);
+  LockPageSector(buffer);
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_READ_SECTOR_RETRY);
@@ -366,8 +382,7 @@ ide_read (void *d_, block_sector_t sec_no, void *buffer)
     PANIC ("%s: disk read failed, sector=%"PRDSNu, d->name, sec_no);
   input_sector (c, buffer);
   lock_release (&c->lock);
-  FreeLockPage(vir_page1);
-  FreeLockPage(vir_page2);
+  FreeLockPageSector(buffer);
 }
 
 /* Write sector SEC_NO to disk D from BUFFER, which must contain
@@ -380,17 +395,7 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
 {
   struct ata_disk *d = d_;
   struct channel *c = d->channel;
- /* char s;
- int i;
- for(i=0;i<BLOCK_SECTOR_SIZE;i++)
-     s=((char *)buffer)[i];
-  */
- void *vir_page1=buffer;
- void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
- //vir_page2=(vir_page2==vir_page1?NULL:vir_page2);
-if(vir_page1<=0xC0000000) if(!LockPage(vir_page1)) while(1);
-if(vir_page2<=0xC0000000) if(!LockPage(vir_page2)) while(1);
-
+  LockPageSector(buffer);
   lock_acquire (&c->lock);
   select_sector (d, sec_no);
   issue_pio_command (c, CMD_WRITE_SECTOR_RETRY);
@@ -399,8 +404,7 @@ if(vir_page2<=0xC0000000) if(!LockPage(vir_page2)) while(1);
   output_sector (c, buffer);
   sema_down (&c->completion_wait);
   lock_release (&c->lock);
-  FreeLockPage(vir_page1);
-  FreeLockPage(vir_page2);
+  FreeLockPageSector(buffer);
 }
 
 static struct block_operations ide_operations =

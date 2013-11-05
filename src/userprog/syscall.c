@@ -185,7 +185,7 @@ int CloseFile(struct thread *t,int fd,int bAll)
         return 0;
     }
 
-  for (e = list_begin (&t->file_list); e != list_end (&t->file_list);)
+  for (e = list_begin (&t->file_list); e != list_end (&t->file_list);e=list_next(e))
   {
        struct file_node *fn = list_entry (e, struct file_node, elem);
             if(fn->fd==fd)
