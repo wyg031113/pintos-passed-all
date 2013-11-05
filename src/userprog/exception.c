@@ -173,7 +173,7 @@ page_fault (struct intr_frame *f)
   if(not_present||(is_kernel_vaddr(fault_addr)&&user))
   {
       
-  printf("run here,fault_addr=%x notpresent=%d user=%d\n",fault_addr,not_present,user);
+  //printf("run here,fault_addr=%x notpresent=%d user=%d\n",fault_addr,not_present,user);
   ExitStatus(-1);
   } 
    //if(!not_present&&is_user_vaddr(fault_addr)&&!user)
