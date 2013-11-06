@@ -206,7 +206,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   uint8_t *buffer = buffer_;
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
-  sema_down(&inode->SemaSyn);
+//  sema_down(&inode->SemaSyn);
   while (size > 0)
     {
       /* Disk sector to read, starting byte offset within sector. */
@@ -248,7 +248,7 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
       bytes_read += chunk_size;
     }
   free (bounce);
-  sema_up(&inode->SemaSyn);
+ // sema_up(&inode->SemaSyn);
   return bytes_read;
 }
 
