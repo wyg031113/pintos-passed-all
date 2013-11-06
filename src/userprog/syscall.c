@@ -346,7 +346,7 @@ void IMmap(struct intr_frame *f)
         }
     int fd=(int)*((unsigned int *)f->esp+4);
     void *vaddr=*((unsigned *)f->esp+5);
-    if(((unsigned int )vaddr&PGSIZE)!=0||vaddr==NULL||vaddr==0xBFFFF000)
+    if(((unsigned int )vaddr&PGMASK)!=0||vaddr==NULL||vaddr==0xBFFFF000)
     {
 	f->eax=-1;
 	return;

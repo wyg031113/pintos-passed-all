@@ -110,6 +110,7 @@ bool reload(struct PageCon *pc)
         static int x=0;
 	printf("reload page %d\n",x++);
 #endif
+	pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
 	return true;
     }
     else if(pc->is_code==1)

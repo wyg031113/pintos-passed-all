@@ -20,6 +20,7 @@ bool WriteBackFile(struct PageCon *pc)
 	 printf("Write file back failed\n");
 	 return false;
      }
+     pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
 
      return true;
 }
@@ -40,6 +41,7 @@ bool UnMapFile(struct thread *cur,struct MmapNode *mn)
 	{
 	      WriteBackFile(pc);
 	      pagedir_clear_page(pc->t->pagedir,pc->vir_page);
+	      pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
 	      palloc_free_page(pc->phy_page);
 	}   
 	free(pc);
