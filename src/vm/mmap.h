@@ -16,6 +16,7 @@ struct MmapNode
     int  id;
 };
 int IDAlloc(void);
-bool WriteBackFile(struct MmapNode *mn,struct PageCon *pc);
-
+bool WriteBackFile(struct PageCon *pc);
+struct MmapNode *GetMapNodeFromID(struct thread *t,int id);
+bool UnMapFile(struct thread *cur,struct MmapNode *mn);
 #endif

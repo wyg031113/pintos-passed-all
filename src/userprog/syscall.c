@@ -21,23 +21,6 @@
 static void syscall_handler (struct intr_frame *);
 typedef void (*CALL_PROC)(struct intr_frame*);
 CALL_PROC pfn[MAXCALL];
-void IWrite(struct intr_frame*);
-void IExit(struct intr_frame *f);
-void ExitStatus(int status);
-void ICreate(struct intr_frame *f);
-void IOpen(struct intr_frame *f);
-void IClose(struct intr_frame *f);
-void IRead(struct intr_frame *f);
-void IFileSize(struct intr_frame *f);
-void IExec(struct intr_frame *f);
-void IWait(struct intr_frame *f);
-void ISeek(struct intr_frame *f);
-void IRemove(struct intr_frame *f);
-void ITell(struct intr_frame *f);
-void IHalt(struct intr_frame *f);
-void IMmap(struct intr_frame *f);
-void IUnMap(struct intr_frame *f);
-struct file_node *GetFile(struct thread *t,int fd);
 void
 syscall_init (void)
 {
@@ -179,7 +162,7 @@ void IClose(struct intr_frame *f)
 }
 int CloseFile(struct thread *t,int fd,int bAll)
 {
-    struct list_elem *e,*p;
+    struct list_elem *e;
     if(bAll)
     {
         while(!list_empty(&t->file_list))
@@ -380,6 +363,7 @@ void IMmap(struct intr_frame *f)
 	f->eax=-1;
 	return;
     }
+  
     struct MmapNode *mn=(struct MmapNode *)malloc(sizeof(struct MmapNode));
     if(mn==NULL)
     {
@@ -392,19 +376,9 @@ void IMmap(struct intr_frame *f)
     mn->vaddr=vaddr;
     list_push_back(&t->MmapFile,&mn->elem);
     lazy_load(mn->FilePtr,0,vaddr,size,ZeroBytes,true,4);
-    return f->eax=mn->id;
+    f->eax=mn->id;
 }
-struct MmapNode *GetMapNodeFromID(struct thread *t,int id)
-{
-     struct list_elem *e;
-     for(e=list_begin(&t->MmapFile);e!=list_end(&t->MmapFile);e=list_next(e))
-     {
-	 struct MmapNode *mn=list_entry(e,struct MmapNode,elem);
-	 if(mn->id==id)
-	     return mn;
-     }
-     return -1;
-}
+
 void IMunmap(struct intr_frame *f)
 {
     if(!is_user_vaddr(((int *)f->esp)+2))
@@ -412,21 +386,13 @@ void IMunmap(struct intr_frame *f)
     struct thread *cur=thread_current();
     int id=*((int *)f->esp+1);
     struct MmapNode *mn=GetMapNodeFromID(cur,id);
-    struct PageCon *pc=NULL;
-    int i;
-    for(i=0;i<mn->nPages;i++)
+    if(mn==NULL)
     {
-	pc=page_lookup(&cur->h,mn->vaddr+i*PGSIZE);
-	if(pc==NULL)
-	    printf("write back file failed\n");
-	hash_delete(&cur->h,&pc->has_elem);
-	enum intr_level old_level=intr_disable();
-	list_remove(&pc->all_elem);
-	intr_set_level(old_level);
-	if(pc->phy_page!=NULL&&pagedir_get_page(pc->t->pagedir,pc->vir_page)!=NULL)
-	    palloc_free_page(pc->phy_page);
-	free(pc);
+	printf("unMap a not exist map file\n");
+	return;
     }
-    list_remove(&mn->elem);
-    free(mn);
-} 
+    UnMapFile(cur,mn);
+}
+
+
+
