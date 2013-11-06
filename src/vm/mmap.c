@@ -14,14 +14,20 @@ bool WriteBackFile(struct PageCon *pc)
 {
     // if(pagedir_get_page(pc->t->pagedir,pc->vir_page)==NULL&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
 	 //return true;
+     if(pc->phy_page==NULL)return;
      file_seek(pc->FilePtr,pc->offs);
      if(file_write(pc->FilePtr,pc->phy_page,pc->read_bytes)!=pc->read_bytes)
      {
 	 printf("Write file back failed\n");
 	 return false;
      }
+     //printf("Write %x back to file\n",pc->vir_page);
      pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
-
+     //int i;
+    // char *p=(char *)pc->phy_page;
+  //   for(i=0;i<0x1000;i++)
+//	 printf("%x ",p[i]);
+     //printf("\n");
      return true;
 }
 bool UnMapFile(struct thread *cur,struct MmapNode *mn)

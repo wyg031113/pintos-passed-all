@@ -360,7 +360,7 @@ void IMmap(struct intr_frame *f)
 	return;
     }
     int nPages= (size+PGSIZE-1)/PGSIZE;
-    int ZeroBytes=PGSIZE-size%PGSIZE;
+    int ZeroBytes=(PGSIZE-size%PGSIZE)%PGSIZE;
     int i;
     for(i=0;i<nPages;i++)
 	if(page_lookup(&t->h,vaddr+PGSIZE*i))
@@ -384,6 +384,7 @@ void IMmap(struct intr_frame *f)
     list_push_back(&t->MmapFile,&mn->elem);
     lazy_load(mn->FilePtr,0,vaddr,size,ZeroBytes,true,4);
     f->eax=mn->id;
+    //printf("maped a file to %x,size=%d,pages=%d zerobytes=%d\n",vaddr,size,nPages,ZeroBytes);
 }
 
 void IMunmap(struct intr_frame *f)

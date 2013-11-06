@@ -11,7 +11,9 @@
 #include "tests/main.h"
 
 #define CHUNK_SIZE (128 * 1024)
+//#define CHUNK_SIZE (1024)
 #define CHUNK_CNT 8                             /* Number of chunks. */
+//#define CHUNK_CNT 1                             /* Number of chunks. */
 #define DATA_SIZE (CHUNK_CNT * CHUNK_SIZE)      /* Buffer size. */
 
 unsigned char buf1[DATA_SIZE], buf2[DATA_SIZE];
@@ -55,6 +57,10 @@ sort_chunks (const char *subprocess, int exit_status)
       quiet = true;
       CHECK ((handle = open (fn)) > 1, "open \"%s\"", fn);
       write (handle, buf1 + CHUNK_SIZE * i, CHUNK_SIZE);
+      //int j;
+      //for(j=0;j<CHUNK_SIZE;j++)
+	//  printf("%x ",*(buf1+CHUNK_SIZE*i+j));
+    // printf("\n\n");
       close (handle);
 
       /* Sort with subprocess. */
@@ -127,11 +133,13 @@ verify (void)
   buf_idx = 0;
   for (hist_idx = 0; hist_idx < sizeof histogram / sizeof *histogram;
        hist_idx++)
-    {
+  {
+  //    printf("hist_idx=%x",hist_idx);
       while (histogram[hist_idx]-- > 0) 
         {
-          if (buf2[buf_idx] != hist_idx)
+         if (buf2[buf_idx] != hist_idx)
             fail ("bad value %d in byte %zu", buf2[buf_idx], buf_idx);
+//            printf("buf2[buf_idx]=%x,should=%x\n",buf2[buf_idx],hist_idx);
           buf_idx++;
         } 
     }

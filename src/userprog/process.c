@@ -198,6 +198,7 @@ process_exit (void)
       printf("%s: exit(%d)\n",cur->name,cur->ret); //输出推出消息
 //     if(cur->ret==-1)
   //     while(1);
+      UnMapAllFile(cur);
       record_ret(cur->father,cur->tid,cur->ret); //保存返回值到父进程
       cur->SaveData=true;
        if(cur->father!=NULL&&cur->bWait)  //如果有父进程在等就唤醒他
@@ -212,7 +213,6 @@ process_exit (void)
           struct ret_data *rd=list_entry(list_pop_front(&cur->sons_ret),struct ret_data,elem);
           free(rd);
       }
-      UnMapAllFile(cur);
       enum intr_level old_level=intr_disable();
       cur->pagedir = NULL;
       pagedir_activate (NULL);

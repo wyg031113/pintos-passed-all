@@ -6,7 +6,7 @@
 #include "tests/lib.h"
 #include "tests/main.h"
 #include "tests/vm/qsort.h"
-
+#include<stdio.h>
 const char *test_name = "child-qsort-mm";
 
 int
@@ -20,6 +20,10 @@ main (int argc UNUSED, char *argv[])
   CHECK ((handle = open (argv[1])) > 1, "open \"%s\"", argv[1]);
   CHECK (mmap (handle, p) != MAP_FAILED, "mmap \"%s\"", argv[1]);
   qsort_bytes (p, 1024 * 128);
-  
+//  write(handle,p,1024*128);
+// int i;
+//for(i=0;i<1024*128;i++)
+  //  printf("%x ",p[i]);
+//printf("\n\n");
   return 80;
 }

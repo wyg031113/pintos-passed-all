@@ -62,6 +62,8 @@ void *PageAlloc(enum palloc_flags flags)
 	    //printf("run FrameAlloc\n");
 	    if(pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
 		WriteBackFile(pc);
+	    else
+		printf("file not change page=%x\n",pc->vir_page);
 	}
 	else
         if( !(pc->is_code==2&&pc->writable==false))

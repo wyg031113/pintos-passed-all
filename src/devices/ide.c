@@ -361,7 +361,7 @@ static bool LockPageSector(void *buffer)
 static bool FreeLockPageSector(void *buffer)
 {
   void *vir_page1=buffer;
-  void *vir_page2=buffer+BLOCK_SECTOR_SIZE;
+  void *vir_page2=buffer+BLOCK_SECTOR_SIZE-1;
   if((unsigned)vir_page1&~PGMASK==(unsigned)vir_page2&~PGMASK)
       vir_page2=NULL;
   FreeLockPage(vir_page1);

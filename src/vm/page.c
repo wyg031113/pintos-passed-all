@@ -25,10 +25,12 @@ install_page (void *upage, void *kpage, bool writable)
 bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
               uint32_t read_bytes, uint32_t zero_bytes, bool writable,int is_code)
 {
+    int loadpages=0;
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
   ASSERT (pg_ofs (upage) == 0);
   ASSERT (ofs % PGSIZE == 0);
 
+       static int x=0;
   struct thread *t=thread_current();
   //file_seek (file, ofs);
   off_t every_offs=ofs;
@@ -61,18 +63,23 @@ bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
        hash_insert(&t->h,&pc->has_elem);
 #ifdef DBGPAGE
        printf("add page %x\n",pc->vir_page);
-       static int x=0;
        printf("lazy load page:%d\n",x++);
 #endif
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
+    //  if(is_code==4)
+//	  printf("Add a page %x, offset=%x\n",pc->vir_page,every_offs);
       upage += PGSIZE;
       every_offs+=page_read_bytes;
+      loadpages++;
     }
+  //if(is_code==4)
+    //  printf("real load pages %d\n",loadpages);
   return true;
 }
 bool reload(struct PageCon *pc)
 {
+        static int x=0;
     struct thread *t=thread_current();
     pc->phy_page=PageAlloc(PAL_USER);
     if(pc->phy_page==NULL)
@@ -106,8 +113,9 @@ bool reload(struct PageCon *pc)
 	list_push_back(&PageUsed,&pc->all_elem);
 	ICount++;
 	intr_set_level(old_level);
+//	if(pc->is_code==4)
+//	    printf("load mem map page %x\n",pc->vir_page);
 #ifdef DBGPAGE
-        static int x=0;
 	printf("reload page %d\n",x++);
 #endif
 	pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
