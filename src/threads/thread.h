@@ -142,6 +142,7 @@ struct thread
     struct hash h;
     bool IsUser;
     void *esp;
+    struct list MmapFile;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

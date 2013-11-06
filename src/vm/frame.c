@@ -29,6 +29,7 @@ void InitPageCon(struct PageCon *pc)
     pc->is_code=0;
     pc->t=NULL;
     pc->LockTimes=0;
+    pc->FilePtr=NULL;
 }
 void *PageAlloc(enum palloc_flags flags)
 {

@@ -22,7 +22,7 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
-bool lazy_load (off_t ofs, uint8_t *upage,
+bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
               uint32_t read_bytes, uint32_t zero_bytes, bool writable,int is_code)
 {
   ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
@@ -57,6 +57,7 @@ bool lazy_load (off_t ofs, uint8_t *upage,
        pc->is_code=is_code;
        pc->vir_page=upage; 
        pc->t=t;
+       pc->FilePtr=file;
        hash_insert(&t->h,&pc->has_elem);
 #ifdef DBGPAGE
        printf("add page %x\n",pc->vir_page);
@@ -82,7 +83,7 @@ bool reload(struct PageCon *pc)
     if(pc->is_code==0||(pc->is_code==2&&pc->writable==false))
     {    
         /* Load this page. */
-        file_seek(t->FileSelf,pc->offs);
+        file_seek(pc->FilePtr,pc->offs);
         if(file_read (t->FileSelf,pc->phy_page, pc->read_bytes) != (int)pc->read_bytes)
         {
            palloc_free_page (pc->phy_page);

@@ -14,6 +14,7 @@
 #include "vm/page.h"
 #include "vm/mmap.h"
 #include "vm/hashfun.h"
+#include <hash.h>
 #define MAXCALL 21
 #define MaxFiles 200
 #define stdin 1
@@ -389,5 +390,43 @@ void IMmap(struct intr_frame *f)
     mn->FilePtr=file_reopen(fn->f);
     mn->id=IDAlloc();
     mn->vaddr=vaddr;
-    //lazy_load()
+    list_push_back(&t->MmapFile,&mn->elem);
+    lazy_load(mn->FilePtr,0,vaddr,size,ZeroBytes,true,4);
+    return f->eax=mn->id;
 }
+struct MmapNode *GetMapNodeFromID(struct thread *t,int id)
+{
+     struct list_elem *e;
+     for(e=list_begin(&t->MmapFile);e!=list_end(&t->MmapFile);e=list_next(e))
+     {
+	 struct MmapNode *mn=list_entry(e,struct MmapNode,elem);
+	 if(mn->id==id)
+	     return mn;
+     }
+     return -1;
+}
+void IMunmap(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+2))
+      ExitStatus(-1);
+    struct thread *cur=thread_current();
+    int id=*((int *)f->esp+1);
+    struct MmapNode *mn=GetMapNodeFromID(cur,id);
+    struct PageCon *pc=NULL;
+    int i;
+    for(i=0;i<mn->nPages;i++)
+    {
+	pc=page_lookup(&cur->h,mn->vaddr+i*PGSIZE);
+	if(pc==NULL)
+	    printf("write back file failed\n");
+	hash_delete(&cur->h,&pc->has_elem);
+	enum intr_level old_level=intr_disable();
+	list_remove(&pc->all_elem);
+	intr_set_level(old_level);
+	if(pc->phy_page!=NULL&&pagedir_get_page(pc->t->pagedir,pc->vir_page)!=NULL)
+	    palloc_free_page(pc->phy_page);
+	free(pc);
+    }
+    list_remove(&mn->elem);
+    free(mn);
+} 

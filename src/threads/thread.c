@@ -603,6 +603,7 @@ init_thread (struct thread *t, const char *name, int priority)
     t->bWait=false;
     t->FileNum=0;
     t->IsUser=false;
+    list_init(&t->MmapFile);
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
      list_init(&t->file_list);

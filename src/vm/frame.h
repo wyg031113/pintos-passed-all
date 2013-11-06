@@ -7,6 +7,7 @@
 #include"threads/palloc.h"
 struct PageCon
 {
+    struct file *FilePtr;
     uint8_t *vir_page;   //虚拟页 作为 hash 表的主键
     uint8_t *phy_page;   //物理页
     int    offs;         //该页在代码文件中的偏移 或者在swap分区中的位置

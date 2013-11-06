@@ -69,6 +69,7 @@ start_process (void *file_name_)
   struct thread *t=thread_current();
   hash_init(&t->h,page_hash,page_less,t); 
   t->IsUser=true;
+  t->FileSelf=filesys_open(token);
   success = load (token, &if_.eip, &if_.esp);
     if (!success)
     {
@@ -81,7 +82,6 @@ start_process (void *file_name_)
 
     sema_up(&t->SemaWaitSuccess);   //sync with exec()
     sema_down(&t->SemaWaitSuccess);
-    t->FileSelf=filesys_open(token);
     file_deny_write(t->FileSelf);
   char *esp=(char *)if_.esp;
   char *arg[256];               //assume numbers of argument below 256
@@ -336,8 +336,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
-
+  if(t->FileSelf==NULL)
+      goto next;
+  file = file_reopen (t->FileSelf);
+next:
   if (file == NULL)
     {
       printf ("load: %s: open failed\n", file_name);
@@ -409,7 +411,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   read_bytes = 0;
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
-              if (!lazy_load (file_page, (void *) mem_page,
+              if (!lazy_load (t->FileSelf,file_page, (void *) mem_page,
                                  read_bytes, zero_bytes, writable,0))
                 goto done;
             }
