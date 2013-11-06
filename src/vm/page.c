@@ -80,11 +80,11 @@ bool reload(struct PageCon *pc)
 	printf("reload failed because no phy_page\n");
         return false;
     }   
-    if(pc->is_code==0||(pc->is_code==2&&pc->writable==false))
+    if(pc->is_code==0||(pc->is_code==2&&pc->writable==false)||pc->is_code==4)
     {    
         /* Load this page. */
         file_seek(pc->FilePtr,pc->offs);
-        if(file_read (t->FileSelf,pc->phy_page, pc->read_bytes) != (int)pc->read_bytes)
+        if(file_read (pc->FilePtr,pc->phy_page, pc->read_bytes) != (int)pc->read_bytes)
         {
            palloc_free_page (pc->phy_page);
 	   printf("reload read file fail!\n");
@@ -99,7 +99,8 @@ bool reload(struct PageCon *pc)
            palloc_free_page (pc->phy_page);
            return false;
         }   
-	pc->is_code=2;
+	if(pc->is_code==0)
+	    pc->is_code=2;
 	enum intr_level old_level=intr_disable();
 	list_remove(&pc->all_elem);
 	list_push_back(&PageUsed,&pc->all_elem);

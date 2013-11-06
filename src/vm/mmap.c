@@ -13,9 +13,9 @@ int IDAlloc(void)
 bool WriteBackFile(struct PageCon *pc)
 {
     // if(pagedir_get_page(pc->t->pagedir,pc->vir_page)==NULL&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
-	 return true;
+	 //return true;
      file_seek(pc->FilePtr,pc->offs);
-     if(file_write(pc->FilePtr,pc->vir_page,pc->read_bytes)!=pc->read_bytes)
+     if(file_write(pc->FilePtr,pc->phy_page,pc->read_bytes)!=pc->read_bytes)
      {
 	 printf("Write file back failed\n");
 	 return false;
@@ -29,16 +29,17 @@ bool UnMapFile(struct thread *cur,struct MmapNode *mn)
     int i;
     for(i=0;i<mn->nPages;i++)
     {
+	enum intr_level old_level=intr_disable();
 	pc=page_lookup(&cur->h,mn->vaddr+i*PGSIZE);
 	if(pc==NULL)
 	    printf("write back file failed\n");
-	enum intr_level old_level=intr_disable();
 	hash_delete(&cur->h,&pc->has_elem);
 	list_remove(&pc->all_elem);
 	intr_set_level(old_level);
-	if(pc->phy_page!=NULL&&pagedir_get_page(pc->t->pagedir,pc->vir_page)!=NULL&&pagedir_is_dirty(cur->pagedir,pc->vir_page))
+	if(pc->phy_page!=NULL&&pagedir_get_page(pc->t->pagedir,pc->vir_page)!=NULL&&pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
 	{
 	      WriteBackFile(pc);
+	      pagedir_clear_page(pc->t->pagedir,pc->vir_page);
 	      palloc_free_page(pc->phy_page);
 	}   
 	free(pc);
@@ -64,6 +65,7 @@ void UnMapAllFile(struct thread *t)
     struct MmapNode *mn;
     while(!list_empty(&t->MmapFile))
     {
+//	printf("run here\n");
 	mn=list_entry(list_pop_front(&t->MmapFile),struct MmapNode,elem);
 	UnMapFile(t,mn);
     }

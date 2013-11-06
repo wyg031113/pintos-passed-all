@@ -42,6 +42,8 @@ syscall_init (void)
   pfn[SYS_REMOVE]=IRemove;
   pfn[SYS_TELL]=ITell;
   pfn[SYS_HALT]=IHalt;
+  pfn[SYS_MMAP]=IMmap;
+  pfn[SYS_MUNMAP]=IMunmap;
 }
 
 static void
@@ -344,7 +346,7 @@ void IMmap(struct intr_frame *f)
         }
     int fd=(int)*((unsigned int *)f->esp+4);
     void *vaddr=*((unsigned *)f->esp+5);
-    if((unsigned)vaddr&!PGMASK!=0||vaddr==NULL)
+    if(((unsigned int )vaddr&PGSIZE)!=0||vaddr==NULL||vaddr==0xBFFFF000)
     {
 	f->eax=-1;
 	return;
@@ -352,8 +354,13 @@ void IMmap(struct intr_frame *f)
     struct thread *t=thread_current();
     struct file_node *fn=GetFile(thread_current(),fd);
     int size=file_length(fn->f);
+    if(size==0)
+    {
+	f->eax=-1;
+	return;
+    }
     int nPages= (size+PGSIZE-1)/PGSIZE;
-    int ZeroBytes=size%PGSIZE;
+    int ZeroBytes=PGSIZE-size%PGSIZE;
     int i;
     for(i=0;i<nPages;i++)
 	if(page_lookup(&t->h,vaddr+PGSIZE*i))

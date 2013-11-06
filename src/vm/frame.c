@@ -57,6 +57,13 @@ void *PageAlloc(enum palloc_flags flags)
 	list_push_back(&AllPage,&pc->all_elem);
 	ICount--;
         intr_set_level(old_level);
+	if(pc->is_code==4)
+	{
+	    //printf("run FrameAlloc\n");
+	    if(pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
+		WriteBackFile(pc);
+	}
+	else
         if( !(pc->is_code==2&&pc->writable==false))
 	{
              pc->offs=SwapOutPage(pc->phy_page);
@@ -78,6 +85,11 @@ void *PageAlloc(enum palloc_flags flags)
   if(phy_page==NULL)
 	    printf("No page in mem! error_code=%d\n",error_code);
   else IUsed++;
+  if(((unsigned)phy_page&0xFFF)!=0)
+  {
+      printf("get a wrong page\n");
+      while(1);
+  }
 #ifdef DBG
   printf("used pages=%d  but IUsed=%d\n",Pages,IUsed);   
  #endif

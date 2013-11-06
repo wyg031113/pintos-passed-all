@@ -20,6 +20,7 @@
 #include <hash.h>
 #include "userprog/syscall.h"
 #include "vm/hashfun.h"
+#include "vm/mmap.h"
 #include "vm/page.h"
 //#include"
 static thread_func start_process NO_RETURN;
@@ -211,6 +212,7 @@ process_exit (void)
           struct ret_data *rd=list_entry(list_pop_front(&cur->sons_ret),struct ret_data,elem);
           free(rd);
       }
+      UnMapAllFile(cur);
       enum intr_level old_level=intr_disable();
       cur->pagedir = NULL;
       pagedir_activate (NULL);
