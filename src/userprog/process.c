@@ -190,11 +190,6 @@ process_exit (void)
          that's been freed (and cleared). */
 
       CloseFile(cur,-1,true);  //关闭打开的文件
-      if(cur->FileSelf!=NULL)  //撤销对自己人deny_write
-      {
-          file_allow_write(cur->FileSelf);
-          file_close (cur->FileSelf);
-      }
       printf("%s: exit(%d)\n",cur->name,cur->ret); //输出推出消息
 //     if(cur->ret==-1)
   //     while(1);
@@ -212,6 +207,11 @@ process_exit (void)
       {
           struct ret_data *rd=list_entry(list_pop_front(&cur->sons_ret),struct ret_data,elem);
           free(rd);
+      }
+      if(cur->FileSelf!=NULL)  //撤销对自己人deny_write
+      {
+          file_allow_write(cur->FileSelf);
+          file_close (cur->FileSelf);
       }
       enum intr_level old_level=intr_disable();
       cur->pagedir = NULL;

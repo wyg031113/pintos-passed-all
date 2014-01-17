@@ -22,6 +22,11 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
+/*----------------lazy_load elf and mem map file-----------------------------------
+ *   这个函数在加载可执行文件和内存映射文件时使用
+ *   函数中创建了一个PageCon结构，把他加入到进程hash表和AllPage链表中。
+ *   
+ *--------------------------------------------------------------------------------*/
 bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
               uint32_t read_bytes, uint32_t zero_bytes, bool writable,int is_code)
 {
@@ -51,6 +56,7 @@ bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
        enum intr_level old_level=intr_disable(); //关中断
        list_push_back(&AllPage,&pc->all_elem);
        intr_set_level(old_level);
+       //以下设置pc各项内容
        InitPageCon(pc);
        pc->offs=every_offs;
        pc->read_bytes=page_read_bytes;
@@ -77,6 +83,10 @@ bool lazy_load (struct file *file,off_t ofs, uint8_t *upage,
     //  printf("real load pages %d\n",loadpages);
   return true;
 }
+/*------------------重新从文件或者交换分区载入页------------------------------
+ * 对于被置换出去的页或者是lazy_load还未载入过内存的页，这个函数则根据
+ * struct PageCon结构载入页。
+ * */
 bool reload(struct PageCon *pc)
 {
         static int x=0;
@@ -88,6 +98,7 @@ bool reload(struct PageCon *pc)
         return false;
     }   
     if(pc->is_code==0||(pc->is_code==2&&pc->writable==false)||pc->is_code==4)
+	/*这个表示要载入的页是代码文件或者映射到内存的文件，这是首次载入，要从源文件载入  */
     {    
         /* Load this page. */
         file_seek(pc->FilePtr,pc->offs);
@@ -121,7 +132,7 @@ bool reload(struct PageCon *pc)
 	pagedir_set_dirty(pc->t->pagedir,pc->vir_page,false);
 	return true;
     }
-    else if(pc->is_code==1)
+    else if(pc->is_code==1)            //pc->is_code==1意味着这个页在交换分区上
     {
         if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
         {
@@ -141,7 +152,8 @@ bool reload(struct PageCon *pc)
 #endif
 	return true;
     }
-    else if(pc->is_code==3)
+    else if(pc->is_code==3)           //3 表示这是lazy_load的stack 页,而且之前未使用过，
+				      //只需要安装申请到页就可以。
     {
         if (!install_page (pc->vir_page, pc->phy_page, pc->writable))
         {
@@ -149,12 +161,16 @@ bool reload(struct PageCon *pc)
 	   printf("first install stack page error is_code=1\n");
 	   return false;
 	}
-	pc->is_code=1;
+	pc->is_code=1;               //这个页被安装上后，以后无论换入换出都在交换分区中。
 	return true;
     }
     return false;
 }
 
+/*--------------------------------动态增长栈----------------------------------------------
+ *    对于page_fault发生的这个页，立即装入一个物理页.
+ *    如果地址大于fault_addr的页依然有没装入的，采取lazy_load方式
+ *---------------------------------------------------------------------------------------*/
 bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void *fault_addr)
 {
     struct thread *t=thread_current();
@@ -189,6 +205,7 @@ bool StackFault(struct intr_frame *f,bool not_present,bool wirte,bool user,void 
       ICount++;
       intr_set_level(old_level);
       hash_insert(&t->h,&pc->has_elem);	 
+      /*  上边装入了发生page_fault的页，下面lazy_load其他页*/
       if(!LazyLoadStack(pc->vir_page+PGSIZE))
         return false;
       return true;
@@ -198,6 +215,9 @@ end:
       
       return false;
 }
+/*-----------------------lazy_load 栈页---------------------------------
+ * 从vir_page到0xBffff000如果有没有装入的页，立即lazy_load
+ */
 bool LazyLoadStack(void *vir_page)
 {
     struct thread *t=thread_current();
@@ -222,6 +242,10 @@ bool LazyLoadStack(void *vir_page)
     }
     return true;
 }
+/*---------------------锁定一个页到内存中，使这个页不能被淘汰出去---------------
+ *    如果要锁定的页已不在内存，reload这个页。
+ *    LockTimes++锁定次数自增
+ */
 bool LockPage(void *vir_page)
 {
     vir_page=(void*)((unsigned int)vir_page&~PGMASK);
@@ -243,7 +267,10 @@ bool LockPage(void *vir_page)
    }
     return true;
 }
-
+/*---------解锁一个页-----------------------
+ * 并没有把LockTimes赋值为0，只是--LockTimes
+ * LockTimes==0时此页就解锁了。
+ *----------------------------------------- */
 bool FreeLockPage(void *vir_page)
 {
     

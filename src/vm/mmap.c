@@ -14,7 +14,7 @@ bool WriteBackFile(struct PageCon *pc)
 {
     // if(pagedir_get_page(pc->t->pagedir,pc->vir_page)==NULL&&!pagedir_is_dirty(pc->t->pagedir,pc->vir_page))
 	 //return true;
-     if(pc->phy_page==NULL)return;
+     if(pc->phy_page==NULL)return false;
      file_seek(pc->FilePtr,pc->offs);
      if(file_write(pc->FilePtr,pc->phy_page,pc->read_bytes)!=pc->read_bytes)
      {
