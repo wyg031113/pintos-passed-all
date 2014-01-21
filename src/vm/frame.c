@@ -77,6 +77,8 @@ void *PageAlloc(enum palloc_flags flags)
 	     }	
 	     pc->is_code=1;
 	}
+//	if(pc!=NULL&&pc->phy_page==0xcccccccc)
+//		printf("---------------Error!---------------\n");
 	palloc_free_page(pc->phy_page);
 	pc->recent=0;
 	IUsed--;

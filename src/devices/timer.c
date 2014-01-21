@@ -10,6 +10,7 @@
 #include "threads/FixPoint.h"
 #include <hash.h>
 #include "vm/frame.h"
+#include "filesys/cache.h"
 /* See [8254] for hardware details of the 8254 timer chip. */
 
 #if TIMER_FREQ < 19
@@ -181,7 +182,18 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  
+/*	if(Inited)
+	{
+  	//	enum intr_level old_level=intr_disable();
+		PassTime++;
+		if(PassTime%100)
+		{
+			PassTime=0;
+			WriteAllBack();
+		}
+	//	intr_set_level(old_level);
+	}
+*/
   struct thread *t=thread_current();
  if(ticks%100==0)
   {

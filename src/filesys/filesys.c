@@ -6,21 +6,34 @@
 #include "filesys/free-map.h"
 #include "filesys/inode.h"
 #include "filesys/directory.h"
-
+#include "filesys/cache.h"
+#include "threads/thread.h"
+#include "devices/timer.h"
 /* Partition that contains the file system. */
 struct block *fs_device;
 
 static void do_format (void);
+void WriteBackThread(void *aux UNUSED)
+{
+	while(Inited)
+	{
+		//printf("WriteBackRun...\n");
+		WriteAllBack();
+		timer_sleep(500);
+	}
+//	printf("WriteBackStop...\n");
 
+}
 /* Initializes the file system module.
    If FORMAT is true, reformats the file system. */
 void
 filesys_init (bool format) 
 {
+  InitCacheMan();
+  thread_create("WriteBack",31,WriteBackThread,NULL);
   fs_device = block_get_role (BLOCK_FILESYS);
   if (fs_device == NULL)
     PANIC ("No file system device found, can't initialize file system.");
-
   inode_init ();
   free_map_init ();
 
@@ -35,6 +48,7 @@ filesys_init (bool format)
 void
 filesys_done (void) 
 {
+	DestroyCacheMan();
   free_map_close ();
 }
 

@@ -38,6 +38,7 @@
 #include "devices/ide.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
+#include "filesys/cache.h"
 #include "vm/frame.h"
 #include "vm/page.h"
 #include "devices/speaker.h"
@@ -126,6 +127,7 @@ main (void)
 
 #ifdef FILESYS
   /* Initialize file system. */
+ // InitCacheMan();
   ide_init ();
   locate_block_devices ();
   filesys_init (format_filesys);
@@ -142,6 +144,7 @@ main (void)
   run_actions (argv);
 
   /* Finish up. */
+  //DestroyCacheMan();
   shutdown ();
   thread_exit ();
 }
