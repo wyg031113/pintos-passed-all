@@ -16,10 +16,9 @@ struct inode_disk
   {
  //   block_sector_t start;               /* First data sector. */
     off_t length;                       /* File size in bytes. */
-	uint32_t  isdir;
 	uint32_t  blocks[BLOCK_NUM];
     unsigned magic;                     /* Magic number. */
-    uint32_t unused[110];               /* Not used. */
+    uint32_t unused[111];               /* Not used. */
   };
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -265,8 +264,8 @@ inode_close (struct inode *inode)
 				free(brr);
 				free(crr);
 			}
-		}
 	  free_map_release(inode->sector,1);
+		}
       free (inode);
     }
 }
