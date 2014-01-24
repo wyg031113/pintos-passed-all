@@ -107,11 +107,12 @@ void
 block_read (struct block *block, block_sector_t sector, void *buffer)
 {
   check_sector (block, sector);
-  if(block==fs_device)
+/*  if(block==fs_device)
   {
 	  CacheRead(sector,buffer);
 	  return;
   }
+  */
   block->ops->read (block->aux, sector, buffer);
   block->read_cnt++;
 }
@@ -126,11 +127,11 @@ block_write (struct block *block, block_sector_t sector, const void *buffer)
 {
   check_sector (block, sector);
   ASSERT (block->type != BLOCK_FOREIGN);
-  if(block==fs_device)
+/*  if(block==fs_device)
   {
 	  CacheWrite(sector,buffer);
 	  return;
-  }
+  }*/
   block->ops->write (block->aux, sector, buffer);
   block->write_cnt++;
 }
