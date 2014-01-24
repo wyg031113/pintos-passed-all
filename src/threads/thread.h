@@ -153,7 +153,7 @@ struct thread
     struct file *FileSelf;            //open self deny write
     //bool bSuccess;
 #endif
-
+	char pwd[64];
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
@@ -162,7 +162,7 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
-
+const char *GetPwd(void);
 void thread_init (void);
 void thread_start (void);
 

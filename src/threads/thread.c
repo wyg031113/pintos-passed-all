@@ -615,9 +615,16 @@ init_thread (struct thread *t, const char *name, int priority)
      t->esp=NULL;
     // t->bSuccess=true;
 #endif
+//	 malloc(512);
+	t->pwd[0]='/';
+	t->pwd[1]=0;
   list_push_back (&all_list, &t->allelem);
 
 
+}
+const char *GetPwd(void)
+{
+	return thread_current()->pwd;
 }
 struct thread *GetThreadFromTid(tid_t tid)
 {
