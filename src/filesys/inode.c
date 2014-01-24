@@ -266,7 +266,7 @@ inode_close (struct inode *inode)
 				free(crr);
 			}
 		}
-
+	  free_map_release(inode->sector,1);
       free (inode);
     }
 }
