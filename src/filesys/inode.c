@@ -204,7 +204,68 @@ inode_close (struct inode *inode)
      /*     free_map_release (inode->sector, 1);
           free_map_release (inode->data.start,
                             bytes_to_sectors (inode->data.length));
-       */ }
+       */ 
+			int i;
+			for(i=0;i<12;i++)
+				if(inode->data.blocks[i]!=0)
+					free_map_release(inode->data.blocks[i],1);
+			if(inode->data.blocks[12]!=0)
+			{
+				unsigned *arr=(unsigned *)malloc(512);
+				ASSERT(arr!=NULL);
+				block_read(fs_device,inode->data.blocks[12],arr);
+				int j;
+				for(j=0;j<128&&arr[j]!=0;j++)
+						free_map_release(arr[j],1);
+				free(arr);
+				free_map_release(inode->data.blocks[12],1);
+			}
+			if(inode->data.blocks[13]!=0)
+			{
+				unsigned *arr=(unsigned *)malloc(512);
+				unsigned *brr=(unsigned *)malloc(512);
+				ASSERT(arr!=NULL&&brr!=NULL)
+				block_read(fs_device,inode->data.blocks[13],arr);
+				int j,k;
+				for(j=0;j<128&&arr[j]!=0;j++)
+				{
+					block_read(fs_device,arr[j],brr);
+					for(k=0;k<128&&brr[k]!=0;k++)
+							free_map_release(brr[k],1); 
+					free_map_release(arr[j],1);
+				}
+				free_map_release(inode->data.blocks[13],1);
+				free(arr);
+				free(brr);
+			}
+			if(inode->data.blocks[14]!=0)
+			{
+				unsigned *arr=(unsigned *)malloc(512);
+				unsigned *brr=(unsigned *)malloc(512);
+				unsigned *crr=(unsigned *)malloc(512);
+				ASSERT(arr!=0&&brr!=0&&crr!=0);
+				block_read(fs_device,inode->data.blocks[14],arr);
+				int j,k,l;
+				for(j=0;j<128&&arr[j]!=0;j++)
+				{
+					block_read(fs_device,arr[j],brr);
+					
+						for(k=0;k<128&&brr[k]!=0;k++)
+						{
+							block_read(fs_device,brr[k],crr);
+							for(l=0;l<128&&crr[l]!=0;l++)
+								free_map_release(crr[l],1);
+							free_map_release(brr[k],1);
+						}
+					
+					free_map_release(arr[j],1);
+				}
+				free_map_release(inode->data.blocks[14],1);
+				free(arr);
+				free(brr);
+				free(crr);
+			}
+		}
 
       free (inode);
     }

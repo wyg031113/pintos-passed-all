@@ -200,9 +200,9 @@ fsutil_extract (char **argv UNUSED)
           if (dst == NULL)
             PANIC ("%s: open failed", file_name);
           /* Do copy. */
-int pse=sector;
-int psize=size;
-char pt[512];
+//int pse=sector;
+//int psize=size;
+//char pt[512];
           while (size > 0)
             {
               int chunk_size = (size > BLOCK_SECTOR_SIZE
