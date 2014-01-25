@@ -431,11 +431,6 @@ void IChDir(struct intr_frame *f)
     if(!is_user_vaddr(((int *)f->esp)+2))
       ExitStatus(-1);
     char *DirName=*((int *)f->esp+1);
-	if(strlen(DirName)>=MAXPWD)
-	{
-		f->eax=0;
-		return;
-	}
 	char *path=MakePath(DirName);
 	int n=strlen(path);
 	if(path[n-1]!='/')
@@ -458,6 +453,18 @@ void IChDir(struct intr_frame *f)
 	dir_close(dir);
 	while(tpath[n]!='/')
 		tpath[n--]=0;
+	/*if(strlen(tpath)>=MAXPWD)
+	{
+		free(tpath);
+		free(path);
+		f->eax=0;
+		return;
+	}*/
+	struct thread *curthr=thread_current();
+	if(curthr->pwd!=NULL)
+	free(curthr->pwd);
+	n=strlen(tpath);
+	curthr->pwd=malloc(n+1);
 	xstrcpy(thread_current()->pwd,tpath);
 	f->eax=1;
 	free(path);

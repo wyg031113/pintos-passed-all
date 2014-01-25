@@ -85,21 +85,11 @@ typedef int tid_t;
 #include<hash.h>
 #define MAX_SEMA   40                  /* numbers of sema that a thread can get */
 #define MAX_DEEP   40                 /* Max deep of nest priority-donate */
-#define MAXPWD   128
+#define MAXPWD  800 
 //above two can't too big  Maybe we don't have enough memory, mlfqs-load-60 will failed
 extern int load_avg;
 void PrintThread(struct thread *t,void *aux);
 void list_sort_ready(void);
-struct GetedSema                        /*thread geted sema*/
-{
-   struct semaphore *s;
-   int n;
-};
-struct PriStore
-{
-    int pri;
-    struct semaphore *s;
-};
 
 struct file_node
 {
@@ -153,7 +143,7 @@ struct thread
     struct file *FileSelf;            //open self deny write
     //bool bSuccess;
 #endif
-	char pwd[64];
+	char *pwd;
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };

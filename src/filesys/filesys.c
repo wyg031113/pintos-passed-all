@@ -62,16 +62,21 @@ char * MakePath(const char *from)
 	const char *pwd=GetPwd();
 	char *to;
 	int lf=strlen(from);
-	int lp=strlen(pwd);
-	int len=lf+lp;
-	int pos=lp-1;
+	int len=lf;
+	if(pwd!=NULL)
+		len+=strlen(pwd);
 	to=(char *)malloc(len+5);//！注意这里，没有释放内存
 	if(to==NULL)
 	{
 		printf("error\n");
 		return 0;
 	}
+	if(pwd==NULL)
+		xstrcpy(to,"/");
+	else
 	xstrcpy(to,pwd);	
+	int lp=strlen(to);
+	int pos=lp-1;
 	if(to[lp-1]!='/')
 	{
 		to[lp]='/';
@@ -193,8 +198,8 @@ filesys_open (const char *name)
 		lenp--;
 	}	
  }
-if(lenp>=MAXPWD)
-	return NULL;
+//if(lenp>=MAXPWD)
+//	return NULL;
  int cur;
  struct dir *dir=OpenDir(path,&cur);
   struct inode *inode = NULL;
