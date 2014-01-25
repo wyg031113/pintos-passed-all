@@ -65,7 +65,7 @@ char * MakePath(const char *from)
 	int lp=strlen(pwd);
 	int len=lf+lp;
 	int pos=lp-1;
-	to=(char *)malloc(len+1);//！注意这里，没有释放内存
+	to=(char *)malloc(len+5);//！注意这里，没有释放内存
 	if(to==NULL)
 	{
 		printf("error\n");
@@ -126,6 +126,8 @@ struct dir *OpenDir(char *path,int *pos)
 			dir_close(dir);
 			if(inode==NULL)
 				return NULL;
+			if(inode->data.isdir!=1)
+				return NULL;
 			dir=dir_open(inode);
 			inode=NULL;
 			cur=i+1;
@@ -177,6 +179,8 @@ filesys_open (const char *name)
     dir_lookup (dir, path+cur, &inode);
   dir_close (dir);
   free(path);
+ // if(inode->data.isdir!=0)
+//	  return NULL;
   return file_open (inode);
 }
 
@@ -187,10 +191,13 @@ filesys_open (const char *name)
 bool
 filesys_remove (const char *name) 
 {
-  struct dir *dir = dir_open_root ();
-  bool success = dir != NULL && dir_remove (dir, name);
+ char *path=MakePath(name);
+ ASSERT(path!=0);
+ int cur;
+ struct dir *dir=OpenDir(path,&cur);
+  bool success = dir != NULL && dir_remove (dir, path+cur);
   dir_close (dir); 
-
+  free(path);
   return success;
 }
 

@@ -45,6 +45,7 @@ syscall_init (void)
   pfn[SYS_MMAP]=IMmap;
   pfn[SYS_MUNMAP]=IMunmap;
   pfn[SYS_MKDIR]=IMkDir;
+  pfn[SYS_CHDIR]=IChDir;
 }
 
 static void
@@ -421,4 +422,35 @@ void IMkDir(struct intr_frame *f)
    }
 	f->eax=DirCreate(DirName);
 }
-
+void IChDir(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+2))
+      ExitStatus(-1);
+    char *DirName=*((int *)f->esp+1);
+	char *path=MakePath(DirName);
+	int n=strlen(path);
+	if(path[n-1]!='/')
+	{
+		path[n++]='/';
+		path[n++]='a';
+		path[n]=0;
+	}
+	char *tpath=malloc(n+1);
+	ASSERT(tpath!=NULL);
+	xstrcpy(tpath,path);
+	int cur=0;
+	struct dir *dir=OpenDir(path,&cur);
+	if(dir==NULL)
+	{
+		f->eax=0;
+		free(path);
+		return;
+	}
+	dir_close(dir);
+	while(tpath[n]!='/')
+		tpath[n--]=0;
+	xstrcpy(thread_current()->pwd,tpath);
+	f->eax=1;
+	free(path);
+	free(tpath);
+}

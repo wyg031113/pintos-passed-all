@@ -18,7 +18,6 @@ struct dir_entry
   {
     block_sector_t inode_sector;        /* Sector number of header. */
     char name[NAME_MAX + 1];            /* Null terminated file name. */
-	bool isdir;  				// distinct the normal file and directory
     bool in_use;                        /* In use or free? */
   };
 
@@ -27,7 +26,7 @@ struct dir_entry
 bool
 dir_create (block_sector_t sector, size_t entry_cnt)
 {
-  return inode_create (sector, entry_cnt * sizeof (struct dir_entry));
+  return inode_create_ex (sector, entry_cnt * sizeof (struct dir_entry),1);
 }
 
 bool
@@ -41,8 +40,8 @@ DirCreate(const char *name)
  struct dir *dir=OpenDir(path,&cur);
   bool success = (dir != NULL
                   && free_map_allocate (1, &inode_sector)
-                  && inode_create (inode_sector, 20*sizeof(struct dir_entry))
-                  && dir_add_dir(dir,path+cur, inode_sector));
+                  && inode_create_ex (inode_sector, 20*sizeof(struct dir_entry),1)
+                  && dir_add(dir,path+cur, inode_sector));
   if (!success && inode_sector != 0) 
     free_map_release (inode_sector, 1);
   dir_close (dir);
@@ -162,16 +161,6 @@ dir_lookup (const struct dir *dir, const char *name,
 bool
 dir_add (struct dir *dir, const char *name, block_sector_t inode_sector)
 {
-	return dir_addx(dir,name,inode_sector,false); 
-}
-bool
-dir_add_dir (struct dir *dir, const char *name, block_sector_t inode_sector)
-{
-	return dir_addx(dir,name,inode_sector,true); 
-}
-bool
-dir_addx (struct dir *dir, const char *name, block_sector_t inode_sector,bool isdir)
-{
   struct dir_entry e;
   off_t ofs;
   bool success = false;
@@ -203,7 +192,6 @@ dir_addx (struct dir *dir, const char *name, block_sector_t inode_sector,bool is
   e.in_use = true;
   strlcpy (e.name, name, sizeof e.name);
   e.inode_sector = inode_sector;
-  e.isdir=isdir;
   success = inode_write_at (dir->inode, &e, sizeof e, ofs) == sizeof e;
 
  done:

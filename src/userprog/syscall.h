@@ -21,5 +21,6 @@ void IHalt(struct intr_frame *f);
 void IMmap(struct intr_frame *f);
 void IMunmap(struct intr_frame *f);
 void IMkDir(struct intr_frame *f);
+void IChDir(struct intr_frame *f);
 struct file_node *GetFile(struct thread *t,int fd);
 #endif /* userprog/syscall.h */
