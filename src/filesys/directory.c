@@ -30,6 +30,25 @@ dir_create (block_sector_t sector, size_t entry_cnt)
   return inode_create (sector, entry_cnt * sizeof (struct dir_entry));
 }
 
+bool
+DirCreate(const char *name) 
+{
+  block_sector_t inode_sector = 0;
+//  struct dir *dir = dir_open_root ();
+ char *path=MakePath(name);
+ ASSERT(path!=0);
+ int cur;
+ struct dir *dir=OpenDir(path,&cur);
+  bool success = (dir != NULL
+                  && free_map_allocate (1, &inode_sector)
+                  && inode_create (inode_sector, 20*sizeof(struct dir_entry))
+                  && dir_add_dir(dir,path+cur, inode_sector));
+  if (!success && inode_sector != 0) 
+    free_map_release (inode_sector, 1);
+  dir_close (dir);
+ free(path);
+  return success;
+}
 /* Opens and returns the directory for the given INODE, of which
    it takes ownership.  Returns a null pointer on failure. */
 struct dir *

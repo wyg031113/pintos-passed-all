@@ -24,7 +24,7 @@ enum
     SYS_MUNMAP,                 /* Remove a memory mapping. */
 
     /* Project 4 only. */
-    SYS_CHDIR,                  /* Change the current directory. */
+    SYS_CHDIR,                  /* Change the current directory. 15*/
     SYS_MKDIR,                  /* Create a directory. */
     SYS_READDIR,                /* Reads a directory entry. */
     SYS_ISDIR,                  /* Tests if a fd represents a directory. */

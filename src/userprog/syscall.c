@@ -44,6 +44,7 @@ syscall_init (void)
   pfn[SYS_HALT]=IHalt;
   pfn[SYS_MMAP]=IMmap;
   pfn[SYS_MUNMAP]=IMunmap;
+  pfn[SYS_MKDIR]=IMkDir;
 }
 
 static void
@@ -402,5 +403,22 @@ void IMunmap(struct intr_frame *f)
     UnMapFile(cur,mn);
 }
 
-
+void IMkDir(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+2))
+      ExitStatus(-1);
+    char *DirName=*((int *)f->esp+1);
+	int n=strlen(DirName);
+	if(DirName[n-1]=='/')
+	{
+		DirName[n-1]=0;
+		n--;
+	}
+	if(n<=0)
+   {
+	  f->eax=0;
+	  return;
+   }
+	f->eax=DirCreate(DirName);
+}
 

@@ -124,7 +124,10 @@ struct dir *OpenDir(char *path,int *pos)
 			path[i]=0;
 			dir_lookup(dir,path+cur,&inode);
 			dir_close(dir);
+			if(inode==NULL)
+				return NULL;
 			dir=dir_open(inode);
+			inode=NULL;
 			cur=i+1;
 		}
 	*pos=cur;
@@ -154,6 +157,7 @@ filesys_create (const char *name, off_t initial_size)
   return success;
 }
 
+
 /* Opens the file with the given NAME.
    Returns the new file if successful or a null pointer
    otherwise.
@@ -170,7 +174,7 @@ filesys_open (const char *name)
   struct inode *inode = NULL;
 
   if (dir != NULL)
-    dir_lookup (dir, name, &inode);
+    dir_lookup (dir, path+cur, &inode);
   dir_close (dir);
   free(path);
   return file_open (inode);
