@@ -431,7 +431,7 @@ void IChDir(struct intr_frame *f)
     if(!is_user_vaddr(((int *)f->esp)+2))
       ExitStatus(-1);
     char *DirName=*((int *)f->esp+1);
-	if(strlen(DirName>=MAXPWD))
+	if(strlen(DirName)>=MAXPWD)
 	{
 		f->eax=0;
 		return;

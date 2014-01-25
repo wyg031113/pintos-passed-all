@@ -151,6 +151,7 @@ filesys_create (const char *name, off_t initial_size)
 	 free(path);
 	 return false;
  }
+
  int cur;
  struct dir *dir=OpenDir(path,&cur);
   bool success = (dir != NULL
