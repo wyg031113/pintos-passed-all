@@ -24,5 +24,6 @@ void IMkDir(struct intr_frame *f);
 void IChDir(struct intr_frame *f);
 void IReadDir(struct intr_frame *f);
 void IInumber(struct intr_frame *f);
+void IIsDir(struct intr_frame *f);
 struct file_node *GetFile(struct thread *t,int fd);
 #endif /* userprog/syscall.h */

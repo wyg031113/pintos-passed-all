@@ -146,6 +146,11 @@ filesys_create (const char *name, off_t initial_size)
 //  struct dir *dir = dir_open_root ();
  char *path=MakePath(name);
  ASSERT(path!=0);
+ if(strlen(path)>=MAXPWD)
+ {
+	 free(path);
+	 return false;
+ }
  int cur;
  struct dir *dir=OpenDir(path,&cur);
   bool success = (dir != NULL
@@ -169,12 +174,26 @@ struct file *
 filesys_open (const char *name)
 {
  // struct dir *dir = dir_open_root ();
+ int len=strlen(name);
  if(strlen(name)==1&&name[0]=='/') 
  {
 	 return file_open(inode_open(ROOT_DIR_SECTOR));
  }
  char *path=MakePath(name);
  ASSERT(path!=0);
+ int lenp=strlen(path);
+ if(name[len-1]=='.')
+ {
+	 if(len>2&&name[len-2]=='.');
+	 else
+	if(path[lenp-1]=='/')
+	{
+		path[lenp-1]=0;
+		lenp--;
+	}	
+ }
+if(lenp>=MAXPWD)
+	return NULL;
  int cur;
  struct dir *dir=OpenDir(path,&cur);
   struct inode *inode = NULL;
@@ -202,6 +221,8 @@ filesys_remove (const char *name)
  struct dir *tdir=dir;
  struct inode *inode;
  dir_lookup(dir,path+cur,&inode);
+ if(inode==NULL)
+	 return false;
  if(inode->data.isdir==1)
  {
 	 dir=dir_open(inode);

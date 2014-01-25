@@ -49,6 +49,7 @@ syscall_init (void)
   pfn[SYS_CHDIR]=IChDir;
   pfn[SYS_READDIR]=IReadDir;
   pfn[SYS_INUMBER]=IInumber;
+  pfn[SYS_ISDIR]=IIsDir;
 }
 
 static void
@@ -430,6 +431,11 @@ void IChDir(struct intr_frame *f)
     if(!is_user_vaddr(((int *)f->esp)+2))
       ExitStatus(-1);
     char *DirName=*((int *)f->esp+1);
+	if(strlen(DirName>=MAXPWD))
+	{
+		f->eax=0;
+		return;
+	}
 	char *path=MakePath(DirName);
 	int n=strlen(path);
 	if(path[n-1]!='/')
@@ -469,6 +475,11 @@ void IReadDir(struct intr_frame *f)
     int fd=*((unsigned int *)f->esp+4);
 	char *name=*((unsigned int *)f->esp+5);
     struct file_node *fp=GetFile(thread_current(),fd);
+	if(fp->f->inode->removed)
+	{
+		f->eax=0;
+		return ;
+	}
 	struct dir dirx;
 	dirx.pos=fp->f->pos;
 	dirx.inode=fp->f->inode;
@@ -476,7 +487,7 @@ void IReadDir(struct intr_frame *f)
 		f->eax=1;
 	else
 		f->eax=0;
-
+	fp->f->pos=dirx.pos;
 }
 void IInumber(struct intr_frame *f)
 {
@@ -485,4 +496,12 @@ void IInumber(struct intr_frame *f)
     int fd=*((int *)f->esp+1);
 	struct file_node *fn=GetFile(thread_current(),fd);
 	f->eax= fn->f->inode->sector;
+}
+void IIsDir(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+2))
+      ExitStatus(-1);
+    int fd=*((int *)f->esp+1);
+	struct file_node *fn=GetFile(thread_current(),fd);
+	f->eax= fn->f->inode->data.isdir;
 }
