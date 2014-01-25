@@ -15,6 +15,7 @@
 #include "vm/mmap.h"
 #include "vm/hashfun.h"
 #include <hash.h>
+#include "filesys/directory.h"
 #define MAXCALL 21
 #define MaxFiles 200
 #define stdin 1
@@ -46,6 +47,8 @@ syscall_init (void)
   pfn[SYS_MUNMAP]=IMunmap;
   pfn[SYS_MKDIR]=IMkDir;
   pfn[SYS_CHDIR]=IChDir;
+  pfn[SYS_READDIR]=IReadDir;
+  pfn[SYS_INUMBER]=IInumber;
 }
 
 static void
@@ -453,4 +456,33 @@ void IChDir(struct intr_frame *f)
 	f->eax=1;
 	free(path);
 	free(tpath);
+}
+void IReadDir(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+6))
+      ExitStatus(-1);
+    if((char *)*((unsigned int *)f->esp+5)==NULL)
+        {
+            f->eax=-1;
+            ExitStatus(-1);
+        }
+    int fd=*((unsigned int *)f->esp+4);
+	char *name=*((unsigned int *)f->esp+5);
+    struct file_node *fp=GetFile(thread_current(),fd);
+	struct dir dirx;
+	dirx.pos=fp->f->pos;
+	dirx.inode=fp->f->inode;
+	if(dir_readdir(&dirx,name))
+		f->eax=1;
+	else
+		f->eax=0;
+
+}
+void IInumber(struct intr_frame *f)
+{
+    if(!is_user_vaddr(((int *)f->esp)+2))
+      ExitStatus(-1);
+    int fd=*((int *)f->esp+1);
+	struct file_node *fn=GetFile(thread_current(),fd);
+	f->eax= fn->f->inode->sector;
 }
