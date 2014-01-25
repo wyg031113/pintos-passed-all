@@ -587,7 +587,10 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   }
  des1:
   if(offset > inode->data.length)
-	  inode->data.length=offset;
+  {
+  	inode->data.length=offset;
+	block_write(fs_device,inode->sector,&inode->data);
+  } 
   return bytes_written;
 /*
    sema_down(&inode->SemaSyn);
