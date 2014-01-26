@@ -54,7 +54,7 @@ inode_init (void)
    Returns false if memory or disk allocation fails. */
 bool inode_create(block_sector_t sector,off_t length)
 {
-	inode_create_ex(sector,length,0);
+	return inode_create_ex(sector,length,0);
 }
 bool
 inode_create_ex (block_sector_t sector, off_t length,uint32_t isdir)
@@ -136,8 +136,9 @@ inode_open (block_sector_t sector)
     return NULL;
 
   /* Initialize. */
-  sema_init(&inode->SemaSyn,1);
   list_push_front (&open_inodes, &inode->elem);
+  lock_init(&inode->xlock);
+  lock_init(&inode->slock);
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->deny_write_cnt = 0;
@@ -342,6 +343,7 @@ int  GetPos(struct PosInfo *pi,off_t off)
 off_t
 inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 {
+	off_t begin_offset=offset;
   //unsigned tmp[128];
   //block_read(fs_device,129,tmp);
   //if((unsigned)tmp[1]==0x373ae1a7)
@@ -350,8 +352,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   off_t bytes_read = 0;
 //  uint8_t *bounce = NULL;
 //  =================wyg add===================================
-  if(offset>inode_length(inode))
-	  return 0;
+  //if(offset>inode_length(inode))
+	//  return 0;
+  //lock_acquire(&inode->slock);
   struct PosInfo pi;
   uint32_t *arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
 //  block_read(fs_device,132,arr);
@@ -360,7 +363,8 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
   while(size>0)
   {
 
-  
+ // if(offset>=inode_length(inode))
+//		break;
   if(GetPos(&pi,offset)!=0)		goto des1;
   cur_read= 512-pi.off<size?512-pi.off:size;
   if(pi.lev>=0)
@@ -429,7 +433,17 @@ des1:
 	size-=cur_read;
 	offset+=cur_read;
 }
+//if(size>0)
+//{
+//	memset(buffer+bytes_read,0,size);
+//}
 free(arr);
+//lock_release(&inode->slock);
+off_t ShouldRead=inode->data.length-begin_offset;
+if(ShouldRead<0)
+	ShouldRead=0;
+if(ShouldRead<bytes_read)
+	bytes_read=ShouldRead;
 return bytes_read;
 //===================end==================================
 /*
@@ -495,6 +509,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 
   if (inode->deny_write_cnt)
     return 0;
+  //lock_acquire(&inode->slock);
+  //lock_acquire(&inode->xlock);
   struct PosInfo pi;
   uint32_t *arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
   uint32_t cur_write;
@@ -591,6 +607,8 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   	inode->data.length=offset;
 	block_write(fs_device,inode->sector,&inode->data);
   } 
+  //lock_release(&inode->xlock);
+//  lock_release(&inode->slock);
   return bytes_written;
 /*
    sema_down(&inode->SemaSyn);

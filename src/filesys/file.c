@@ -64,8 +64,11 @@ file_get_inode (struct file *file)
 off_t
 file_read (struct file *file, void *buffer, off_t size)
 {
+ lock_acquire(&file->inode->xlock);
   off_t bytes_read = inode_read_at (file->inode, buffer, size, file->pos);
   file->pos += bytes_read;
+  
+  lock_release(&file->inode->xlock);
   return bytes_read;
 }
 
@@ -92,8 +95,10 @@ file_write (struct file *file, const void *buffer, off_t size)
 {
 	if(file->inode->data.isdir!=0)
 		return -1;
+	lock_acquire(&file->inode->xlock);
   off_t bytes_written = inode_write_at (file->inode, buffer, size, file->pos);
   file->pos += bytes_written;
+  lock_release(&file->inode->xlock);
   return bytes_written;
 }
 

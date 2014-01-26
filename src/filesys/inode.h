@@ -28,7 +28,8 @@ struct inode
     bool removed;                       /* True if deleted, false otherwise. */
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
     struct inode_disk data;             /* Inode content. */
-    struct semaphore SemaSyn;
+    struct lock xlock;
+	struct lock slock;
   };
 void inode_init (void);
 bool inode_create_ex (block_sector_t, off_t,uint32_t);

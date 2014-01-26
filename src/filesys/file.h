@@ -1,6 +1,6 @@
 #ifndef FILESYS_FILE_H
 #define FILESYS_FILE_H
-
+#include "threads/synch.h"
 #include "filesys/off_t.h"
 #include <stdio.h>
 struct file
