@@ -5,7 +5,8 @@
 #include "filesys/filesys.h"
 #include "filesys/inode.h"
 #include "threads/malloc.h"
-
+#include "threads/synch.h"
+struct lock DirLock;
 
 
 /* Creates a directory with space for ENTRY_CNT entries in the

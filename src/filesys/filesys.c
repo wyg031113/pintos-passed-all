@@ -9,9 +9,10 @@
 #include "filesys/cache.h"
 #include "threads/thread.h"
 #include "devices/timer.h"
+#include "threads/synch.h"
 /* Partition that contains the file system. */
 struct block *fs_device;
-
+struct lock DirOpenLock;
 static void do_format (void);
 void WriteBackThread(void *aux UNUSED)
 {
@@ -29,6 +30,9 @@ void WriteBackThread(void *aux UNUSED)
 void
 filesys_init (bool format) 
 {
+  lock_init(&DirOpenLock);
+//  lock_init(&DirCloseLock);
+
   InitCacheMan();
   thread_create("WriteBack",31,WriteBackThread,NULL);
   fs_device = block_get_role (BLOCK_FILESYS);
@@ -119,6 +123,7 @@ char * MakePath(const char *from)
 
 struct dir *OpenDir(char *path,int *pos)
 {
+	lock_acquire(&DirOpenLock);
 	struct dir *dir=dir_open_root();
 	struct inode *inode=NULL;
 	int cur=1,i,n;
@@ -130,15 +135,20 @@ struct dir *OpenDir(char *path,int *pos)
 			dir_lookup(dir,path+cur,&inode);
 			dir_close(dir);
 			if(inode==NULL)
-				return NULL;
+				goto end;
 			if(inode->data.isdir!=1)
-				return NULL;
+				goto end;
 			dir=dir_open(inode);
 			inode=NULL;
 			cur=i+1;
 		}
 	*pos=cur;
+	lock_release(&DirOpenLock);
 	return dir;
+
+end:
+	lock_release(&DirOpenLock);
+	return NULL;
 }
 /* Creates a file named NAME with the given INITIAL_SIZE.
    Returns true if successful, false otherwise.
