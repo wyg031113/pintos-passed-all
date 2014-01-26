@@ -353,7 +353,11 @@ static bool LockPageSector(void *buffer)
       vir_page2=NULL;
  if(vir_page1<PHYS_BASE)
      if(!LockPage(vir_page1))
-	 printf("Lock page %x failed\n",vir_page1);
+	 {
+
+ printf("Lock page %x failed\n",vir_page1);
+ while(1);
+	 }
  if(vir_page2!=NULL&&vir_page2<PHYS_BASE) 
      if(!LockPage(vir_page2))
          printf("Lock Page %x failed\n",vir_page2);

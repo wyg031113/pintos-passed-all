@@ -6,7 +6,7 @@
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
-
+#include "vm/frame.h"
 /* Identifies an inode. */
 
 /* Returns the number of sectors to allocate for an inode SIZE
@@ -357,7 +357,9 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
 	//  return 0;
   //lock_acquire(&inode->slock);
   struct PosInfo pi;
-  uint32_t *arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
+  uint32_t *arr=NULL;
+	//while(arr==NULL)
+  		arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
 //  block_read(fs_device,132,arr);
  // printf("mysec=====:%d  v=%x\n",arr[1]);
   off_t cur_read;
@@ -434,10 +436,6 @@ des1:
 	size-=cur_read;
 	offset+=cur_read;
 }
-//if(size>0)
-//{
-//	memset(buffer+bytes_read,0,size);
-//}
 free(arr);
 //lock_release(&inode->slock);
 off_t ShouldRead=inode->data.length-begin_offset;
@@ -513,7 +511,10 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   //lock_acquire(&inode->slock);
   //lock_acquire(&inode->xlock);
   struct PosInfo pi;
-  uint32_t *arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
+  uint32_t *arr=NULL;
+  //while(arr==NULL)
+ arr=(uint32_t *)malloc(BLOCK_SECTOR_SIZE);
+//arr=PageAlloc(PAL_USER);
   uint32_t cur_write;
   while(size>0)
   {
@@ -610,6 +611,7 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
   } 
   //lock_release(&inode->xlock);
 //  lock_release(&inode->slock);
+  free(arr);
   return bytes_written;
 /*
    sema_down(&inode->SemaSyn);
