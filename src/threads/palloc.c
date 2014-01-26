@@ -126,9 +126,9 @@ palloc_free_multiple (void *pages, size_t page_cnt)
   int a=0;
 if(pg_ofs(pages)!=0)
 {
-//printf("
 a=1;
-//while(1);
+  printf("page error! palloc_free_multiple:pg_ofs(pages)!=0,should=0\n");
+  while(1);
 }
   
   ASSERT (pg_ofs (pages) == 0);
