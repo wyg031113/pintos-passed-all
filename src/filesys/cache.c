@@ -10,6 +10,7 @@ struct BlockCache
 	unsigned Num;
 	bool Dirty;
 	//bool Locked;
+	struct lock Lock;
 };
 struct Sec
 {
@@ -28,7 +29,7 @@ void InitCacheMan(void)
 		ManArr[i].Use=false;
 		ManArr[i].Num=0;
 		ManArr[i].Dirty=false;
-		//ManArr[i].Locked=false;
+		lock_init(&ManArr[i].Lock);
 	}
 	PassTime=0;
 	lock_init(&CacheLock);
@@ -37,32 +38,32 @@ void InitCacheMan(void)
 
 void CacheRead(block_sector_t sector,void *buffer)
 {	
-	lock_acquire(&CacheLock);
 	int n=InCache(sector);
 	if(n==-1)
 		n=Fetch(sector);
+	lock_acquire(&ManArr[n].Lock);
 	ASSERT(n!=-1);
 	memcpy(buffer,SecArr[n].data,BLOCK_SECTOR_SIZE);
 	CountSec(n);
-	lock_release(&CacheLock);
+	lock_release(&ManArr[n].Lock);
 //	Fetch(sector+1);
 }
 void CacheWrite(block_sector_t sector,const void *buffer)
 {
-	lock_acquire(&CacheLock);
 	int n=InCache(sector);
 	if(n==-1)
 		n=Fetch(sector);
+	lock_acquire(&ManArr[n].Lock);
 	memcpy(SecArr[n].data,buffer,BLOCK_SECTOR_SIZE);
 	ManArr[n].Dirty=true;
 	CountSec(n);
-	lock_release(&CacheLock);
+	lock_release(&ManArr[n].Lock);
 //	Fetch(sector+1);
 	//WriteBack(n);
 }
 int Fetch(block_sector_t sector)
 {
-
+	lock_acquire(&CacheLock);
 	int i,n=-1;
 	for(i=0;i<CacheSize;i++)
 		if(ManArr[i].Use==false)
@@ -78,6 +79,7 @@ int Fetch(block_sector_t sector)
 	ManArr[n].SecNo=sector;
 	ManArr[n].Num=0;
 	ManArr[n].Dirty=false;
+	lock_release(&CacheLock);
 //	printf("Fetch run\n");
 	return n;
 }
@@ -97,14 +99,18 @@ int Evict()
 	int i,n=-1;
 	unsigned int maxn=0;
 	for(i=0;i<CacheSize;i++)
-		if(ManArr[i].Use==true&&ManArr[i].Num>=maxn)
+	{
+	if(ManArr[i].Use==true&&ManArr[i].Num>=maxn)
 		{
 			maxn=ManArr[i].Num;
 			n=i;
 		}
+	}
+	lock_acquire(&ManArr[n].Lock);
 	ASSERT(n!=-1);
 	WriteBack(n);
-	ManArr[i].Use=false;
+	ManArr[n].Use=false;
+	lock_release(&ManArr[n].Lock);
 //	printf("Evict run\n");
 	return n;
 }
