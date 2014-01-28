@@ -1,12 +1,15 @@
 #include"cache.h"
 #include<string.h>
 #include"devices/block.h"
+#include"threads/synch.h"
+struct lock CacheLock;
 struct BlockCache
 {
 	size_t SecNo;
 	bool Use;
 	unsigned Num;
 	bool Dirty;
+	//bool Locked;
 };
 struct Sec
 {
@@ -25,28 +28,35 @@ void InitCacheMan(void)
 		ManArr[i].Use=false;
 		ManArr[i].Num=0;
 		ManArr[i].Dirty=false;
+		//ManArr[i].Locked=false;
 	}
 	PassTime=0;
+	lock_init(&CacheLock);
 	Inited=true;
 }
+
 void CacheRead(block_sector_t sector,void *buffer)
 {	
+	lock_acquire(&CacheLock);
 	int n=InCache(sector);
 	if(n==-1)
 		n=Fetch(sector);
 	ASSERT(n!=-1);
 	memcpy(buffer,SecArr[n].data,BLOCK_SECTOR_SIZE);
 	CountSec(n);
+	lock_release(&CacheLock);
 //	Fetch(sector+1);
 }
 void CacheWrite(block_sector_t sector,const void *buffer)
 {
+	lock_acquire(&CacheLock);
 	int n=InCache(sector);
 	if(n==-1)
 		n=Fetch(sector);
 	memcpy(SecArr[n].data,buffer,BLOCK_SECTOR_SIZE);
 	ManArr[n].Dirty=true;
 	CountSec(n);
+	lock_release(&CacheLock);
 //	Fetch(sector+1);
 	//WriteBack(n);
 }
